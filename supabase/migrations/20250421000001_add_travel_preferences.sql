@@ -4,7 +4,10 @@ ADD COLUMN IF NOT EXISTS travel_preferences JSONB DEFAULT '{
   "travel_vibe": [],
   "travel_companion": [],
   "travel_purpose": [],
-  "budget_style": [],
+  "budget": {
+    "amount": 50,
+    "style": []
+  },
   "food_preferences": [],
   "tech_preferences": []
 }'::jsonb;
@@ -18,7 +21,10 @@ ADD CONSTRAINT travel_preferences_check CHECK (
   (travel_preferences ? 'travel_vibe') AND
   (travel_preferences ? 'travel_companion') AND
   (travel_preferences ? 'travel_purpose') AND
-  (travel_preferences ? 'budget_style') AND
+  (travel_preferences ? 'budget') AND
+  jsonb_typeof(travel_preferences->'budget') = 'object' AND
+  (travel_preferences->'budget' ? 'amount') AND
+  (travel_preferences->'budget' ? 'style') AND
   (travel_preferences ? 'food_preferences') AND
   (travel_preferences ? 'tech_preferences')
 );
@@ -30,4 +36,4 @@ FOR UPDATE
 USING (auth.uid() = id)
 WITH CHECK (auth.uid() = id);
 
-COMMENT ON COLUMN public.profiles.travel_preferences IS 'User travel preferences including vibe, companions, purpose, budget, food, and tech preferences';
+COMMENT ON COLUMN public.profiles.travel_preferences IS 'User travel preferences including vibe, companions, purpose, budget (amount and style), food, and tech preferences';
