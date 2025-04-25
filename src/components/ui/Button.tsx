@@ -5,7 +5,7 @@ import { cn } from '../../utils/cn';
 
 type ButtonProps = {
   title: string;
-  color?: 'primary' | 'secondary' | 'tertiary' | 'accent' | 'success' | 'error';
+  color?: 'primary' | 'secondary' | 'tertiary' | 'accent' | 'success' | 'error' | 'white';
   size?: 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | 'display';
 } & TouchableOpacityProps;
 
@@ -27,18 +27,23 @@ export const Button = forwardRef<View, ButtonProps>(
           size === '3xl' && 'p-8',
           size === '4xl' && 'p-9',
           size === 'display' && 'p-10',
-          // Color variants
-          color === 'primary' && 'bg-indigo-500',
-          color === 'secondary' && 'bg-gray-500',
-          color === 'tertiary' && 'bg-gray-400',
-          color === 'accent' && 'bg-blue-500',
+          // Updated color variants for the light theme
+          color === 'primary' && 'bg-primary',
+          color === 'secondary' && 'bg-secondary',
+          color === 'tertiary' && 'bg-tertiary',
+          color === 'accent' && 'bg-accent',
           color === 'success' && 'bg-green-500',
           color === 'error' && 'bg-red-500',
+          color === 'white' && 'bg-quinary',
           touchableProps.className
         )}>
         <Text
           className={cn(
-            'text-center font-semibold text-white',
+            'text-center font-semibold',
+            // Set default text color based on button color
+            color === 'tertiary' || color === 'white' || color === 'secondary'
+              ? 'text-text'
+              : 'text-white',
             // Text size variants matching AppText
             size === 'xs' && 'text-xs leading-4',
             size === 'sm' && 'text-sm leading-5',

@@ -6,30 +6,20 @@ import { View, TextInput, TouchableOpacity, ActivityIndicator } from 'react-nati
 import { AppText, Button } from '@/src/components/ui';
 
 type SignupFormProps = {
-  onSubmit: (email: string, password: string, name: string) => void;
+  onSubmit: (email: string, password: string) => void;
   loading?: boolean;
 };
 
 export function SignupForm({ onSubmit, loading = false }: SignupFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const [nameError, setNameError] = useState('');
 
   const validateForm = () => {
     let isValid = true;
-
-    // Name validation
-    if (!name.trim()) {
-      setNameError('Name is required');
-      isValid = false;
-    } else {
-      setNameError('');
-    }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -59,7 +49,7 @@ export function SignupForm({ onSubmit, loading = false }: SignupFormProps) {
 
   const handleSubmit = () => {
     if (validateForm()) {
-      onSubmit(email, password, name);
+      onSubmit(email, password);
     }
   };
 
@@ -73,33 +63,6 @@ export function SignupForm({ onSubmit, loading = false }: SignupFormProps) {
       </AppText>
 
       <View className="space-y-4">
-        <View>
-          <BlurView
-            intensity={20}
-            tint="dark"
-            className={`overflow-hidden rounded-2xl border ${
-              nameError ? 'border-red-500' : 'border-white/10'
-            }`}>
-            <TextInput
-              placeholder="Full Name"
-              value={name}
-              onChangeText={(text) => {
-                setName(text);
-                setNameError('');
-              }}
-              autoCapitalize="words"
-              className="px-6 py-4 text-lg text-white"
-              placeholderTextColor="rgba(255, 255, 255, 0.5)"
-              editable={!loading}
-            />
-          </BlurView>
-          {nameError ? (
-            <AppText size="sm" color="error" className="ml-2 mt-1">
-              {nameError}
-            </AppText>
-          ) : null}
-        </View>
-
         <View>
           <BlurView
             intensity={20}
@@ -171,7 +134,7 @@ export function SignupForm({ onSubmit, loading = false }: SignupFormProps) {
         onPress={handleSubmit}
         color="primary"
         size="lg"
-        disabled={loading || !email || !password || !name}
+        disabled={loading || !email || !password}
       />
 
       {loading && (

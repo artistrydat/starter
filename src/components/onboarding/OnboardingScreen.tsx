@@ -1,5 +1,4 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { GestureResponderEvent, LayoutChangeEvent, TouchableOpacity, View } from 'react-native';
 
 import { AppText, Button } from '@/src/components/ui';
@@ -20,7 +19,7 @@ const STEPS: OnboardingStepType[] = [
 ];
 
 interface OnboardingProps {
-  onComplete: (preferences: PreferencesType) => Promise<void>;
+  onComplete: (preferences: PreferencesType, budgetRange: number) => void;
 }
 
 export const OnboardingScreen = ({ onComplete }: OnboardingProps) => {
@@ -84,33 +83,33 @@ export const OnboardingScreen = ({ onComplete }: OnboardingProps) => {
 
   const handleNext = async () => {
     if (currentStep === STEPS.length - 1) {
-      await onComplete(preferences as PreferencesType);
+      onComplete(preferences as PreferencesType, budgetRange);
     } else {
       setCurrentStep((curr) => curr + 1);
     }
   };
 
   return (
-    <View className="flex-1">
+    <View className="bg-background flex-1">
       <View className="flex-1 p-6">
-        <AppText size="2xl" weight="bold" color="primary" className="mb-2">
+        <AppText size="2xl" weight="bold" color="text" className="mb-2">
           {currentSection.emoji} {currentSection.title}
         </AppText>
-        <AppText size="lg" weight="bold" className="mb-4">
+        <AppText size="lg" weight="bold" color="text" className="mb-4">
           {step.type === 'slider' ? "What's your typical travel budget?" : 'Select all that apply'}
         </AppText>
 
         {step.type === 'slider' ? (
           <>
             <View ref={sliderRef} onLayout={handleLayout} className="relative h-8 justify-center">
-              <View className="bg-quaternary/20 absolute left-0 right-0 top-3 h-2 rounded-full">
+              <View className="absolute left-0 right-0 top-3 h-2 rounded-full bg-quaternary/20">
                 <View
-                  className="bg-quaternary/30 absolute bottom-0 left-0 top-0 rounded-full"
+                  className="absolute bottom-0 left-0 top-0 rounded-full bg-quaternary/60"
                   style={{ width: `${budgetRange}%` }}
                 />
                 <TouchableOpacity
                   onPress={handleSliderPress}
-                  className="bg-primary absolute -top-3 h-8 w-8 rounded-full border-2 border-white/20 shadow-lg"
+                  className="absolute -top-3 h-8 w-8 rounded-full border-2 border-white bg-primary shadow-sm"
                   style={{ left: `${budgetRange}%`, transform: [{ translateX: -16 }] }}
                 />
               </View>
@@ -118,18 +117,18 @@ export const OnboardingScreen = ({ onComplete }: OnboardingProps) => {
 
             <View className="mt-6 flex-row justify-between">
               <View>
-                <AppText color="secondary" size="sm">
+                <AppText color="text" size="sm">
                   Budget
                 </AppText>
-                <AppText color="primary" size="sm">
+                <AppText color="text" size="sm" className="font-medium">
                   $30/day
                 </AppText>
               </View>
               <View>
-                <AppText color="secondary" size="sm" align="right">
+                <AppText color="text" size="sm" align="right">
                   Luxury
                 </AppText>
-                <AppText color="primary" size="sm" align="right">
+                <AppText color="text" size="sm" align="right" className="font-medium">
                   $300+/day
                 </AppText>
               </View>
@@ -148,7 +147,7 @@ export const OnboardingScreen = ({ onComplete }: OnboardingProps) => {
                 className={`mb-4 mr-4 flex-row items-center rounded-full px-4 py-2 ${
                   (preferences[step.id] as string[] | undefined)?.includes(option.id)
                     ? 'bg-primary'
-                    : 'bg-quaternary/20'
+                    : 'bg-tertiary'
                 }`}>
                 <AppText size="lg" className="mr-2">
                   {option.emoji}
@@ -157,8 +156,8 @@ export const OnboardingScreen = ({ onComplete }: OnboardingProps) => {
                   size="base"
                   color={
                     (preferences[step.id] as string[] | undefined)?.includes(option.id)
-                      ? 'secondary'
-                      : 'primary'
+                      ? 'white'
+                      : 'text'
                   }>
                   {option.label}
                 </AppText>
@@ -168,10 +167,11 @@ export const OnboardingScreen = ({ onComplete }: OnboardingProps) => {
         )}
       </View>
 
-      <View className="bg-quinary border-quaternary/20 border-t p-6">
+      <View className="border-t border-quaternary/10 bg-tertiary p-6">
         <Button
           title={currentStep === STEPS.length - 1 ? 'Complete' : 'Continue'}
-          color="primary"
+          className="bg-primary"
+          color="white"
           size="lg"
           onPress={handleNext}
         />

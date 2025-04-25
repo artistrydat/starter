@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SplashScreen, useRouter } from 'expo-router';
 import { createContext, PropsWithChildren, useEffect, useState } from 'react';
 
-import { supabase } from './supabaseClient';
+import { supabase, getSessionWithRetry } from './supabaseClient';
 
 type AuthState = {
   [x: string]: any;
@@ -53,13 +53,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (error) throw error;
         session = data.session;
       } else {
-        // Get existing session (used after onboarding completion)
-        const { data, error } = await supabase.auth.getSession();
+        // Get existing session with improved retry mechanism
+        const { session: existingSession, error } = await getSessionWithRetry();
         if (error) throw error;
-        session = data.session;
+        session = existingSession;
       }
 
-      if (!session) throw new Error('No session found');
+      if (!session) {
+        console.error('No valid session found after all attempts');
+        throw new Error('No session found');
+      }
 
       setIsLoggedIn(true);
       storeAuthState({ isLoggedIn: true });
@@ -101,10 +104,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     const getAuthFromSupabase = async () => {
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        await new Promise((res) => setTimeout(() => res(null), 1000));
+        // Use the improved session retrieval method
+        const { session, error } = await getSessionWithRetry();
+        await new Promise((res) => setTimeout(() => res(null), 500));
 
         if (session) {
           setIsLoggedIn(true);
@@ -114,21 +116,32 @@ export function AuthProvider({ children }: PropsWithChildren) {
           const onboardingCompleted = session.user?.user_metadata?.onboarding_completed === true;
           setHasCompletedOnboarding(onboardingCompleted);
         } else {
+          // If no session from Supabase, try fallback to AsyncStorage
           const value = await AsyncStorage.getItem(authStorageKey);
           if (value !== null) {
             const auth = JSON.parse(value);
-            setIsLoggedIn(auth.isLoggedIn);
+            // Only set isLoggedIn if we're certain the session is valid
+            // This prevents a false logged-in state that would later cause auth errors
+            if (auth.isLoggedIn) {
+              // Verify if we actually have a valid session before setting isLoggedIn
+              const { session: verifySession } = await getSessionWithRetry(1);
+              setIsLoggedIn(!!verifySession);
+            }
           }
         }
       } catch (error) {
         console.log('Error fetching auth state', error);
+        // On error, default to logged out for safety
+        setIsLoggedIn(false);
       }
       setIsReady(true);
     };
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event);
+
       if (event === 'SIGNED_IN' && session) {
         setIsLoggedIn(true);
         storeAuthState({ isLoggedIn: true });
@@ -139,6 +152,17 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setIsLoggedIn(false);
         setHasCompletedOnboarding(false);
         storeAuthState({ isLoggedIn: false });
+      } else if (event === 'TOKEN_REFRESHED' && session) {
+        // Handle token refresh events
+        setIsLoggedIn(true);
+        storeAuthState({ isLoggedIn: true });
+        // Re-check onboarding status when token refreshes
+        const onboardingCompleted = session.user?.user_metadata?.onboarding_completed === true;
+        setHasCompletedOnboarding(onboardingCompleted);
+      } else if (event === 'USER_UPDATED' && session) {
+        // Handle user update events
+        const onboardingCompleted = session.user?.user_metadata?.onboarding_completed === true;
+        setHasCompletedOnboarding(onboardingCompleted);
       }
     });
 

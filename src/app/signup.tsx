@@ -10,71 +10,27 @@ const SignupScreen = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const handleSignup = async (email: string, password: string, name: string) => {
+  const handleSignup = async (email: string, password: string) => {
     try {
       setLoading(true);
+      console.log('Attempting to sign up user with email:', email);
 
-      // Validate email format
-      if (!validateEmail(email)) {
-        throw new Error('Please enter a valid email address');
-      }
-
-      // Validate password strength
-      if (password.length < 6) {
-        throw new Error('Password must be at least 6 characters long');
-      }
-
-      // Sign up with Supabase
-      const {
-        data: { user },
-        error: signUpError,
-      } = await supabase.auth.signUp({
+      // Simple signup with Supabase - the database trigger will handle profile creation
+      const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: {
-            name,
-            onboarding_completed: false,
-          },
-        },
       });
 
-      if (signUpError) {
-        if (signUpError.message.includes('unique constraint')) {
-          throw new Error('This email is already registered. Please try logging in instead.');
-        }
-        throw signUpError;
+      if (error) {
+        console.error('Signup error:', error.message);
+        throw new Error(`Authentication error: ${error.message}`);
       }
 
-      if (!user) throw new Error('No user data returned');
-
-      // Create profile in profiles table
-      const { error: profileError } = await supabase.from('profiles').insert([
-        {
-          id: user.id,
-          email,
-          name,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-      ]);
-
-      if (profileError) {
-        if (profileError.message.includes('unique constraint')) {
-          throw new Error('A profile with this email already exists');
-        }
-        throw profileError;
-      }
+      console.log('User created successfully');
 
       // Check if email confirmation is required
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData?.session;
 
       if (!session) {
         // Email confirmation is required
@@ -93,9 +49,10 @@ const SignupScreen = () => {
         router.replace('/(protected)/onboarding');
       }
     } catch (error) {
+      console.error('Registration error:', error);
       Alert.alert(
         'Registration Failed',
-        error instanceof Error ? error.message : 'An error occurred'
+        error instanceof Error ? error.message : 'An unknown error occurred'
       );
     } finally {
       setLoading(false);

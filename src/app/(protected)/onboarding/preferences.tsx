@@ -3,7 +3,6 @@ import React from 'react';
 import { View } from 'react-native';
 
 import { OnboardingScreen } from '@/src/components/onboarding';
-import { AppText } from '@/src/components/ui';
 
 export default function PreferencesScreen() {
   const router = useRouter();
@@ -11,15 +10,15 @@ export default function PreferencesScreen() {
   const handleComplete = (preferences: any, budgetRange: number) => {
     router.push({
       pathname: '/onboarding/completion',
-      params: { 
+      params: {
         preferences: JSON.stringify(preferences),
-        budgetRange: budgetRange.toString()
+        budgetRange: budgetRange.toString(),
       },
     });
   };
 
   return (
-    <View className="flex-1">
+    <View className="bg-background flex-1">
       <OnboardingScreen onComplete={handleComplete} />
     </View>
   );

@@ -6,7 +6,16 @@ type AppTextProps = {
   children: React.ReactNode;
   size?: 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | 'display';
   weight?: 'normal' | 'medium' | 'semibold' | 'bold';
-  color?: 'primary' | 'secondary' | 'tertiary' | 'accent' | 'success' | 'error';
+  color?:
+    | 'primary'
+    | 'secondary'
+    | 'tertiary'
+    | 'quaternary'
+    | 'text'
+    | 'accent'
+    | 'success'
+    | 'error'
+    | 'white';
   align?: 'left' | 'center' | 'right';
   className?: string;
   numberOfLines?: number;
@@ -16,7 +25,7 @@ export function AppText({
   children,
   size = 'base',
   weight = 'normal',
-  color = 'primary',
+  color = 'text',
   align = 'left',
   className,
   numberOfLines,
@@ -43,13 +52,16 @@ export function AppText({
         weight === 'semibold' && 'font-semibold',
         weight === 'bold' && 'font-bold',
 
-        // Enhanced color system with semantic meanings
-        color === 'primary' && 'text-quaternary dark:text-primary',
-        color === 'secondary' && 'text-tertiary/90 dark:text-secondary/90',
-        color === 'tertiary' && 'text-quaternary/70 dark:text-primary/70',
-        color === 'accent' && 'text-secondary dark:text-secondary',
-        color === 'success' && 'text-green-600 dark:text-green-400',
-        color === 'error' && 'text-red-600 dark:text-red-400',
+        // Updated color system for light theme
+        color === 'primary' && 'text-primary',
+        color === 'secondary' && 'text-secondary',
+        color === 'tertiary' && 'text-tertiary',
+        color === 'quaternary' && 'text-quaternary',
+        color === 'text' && 'text-text',
+        color === 'accent' && 'text-accent',
+        color === 'success' && 'text-green-600',
+        color === 'error' && 'text-red-600',
+        color === 'white' && 'text-white',
 
         // Alignment with improved spacing
         align === 'left' && 'text-left',
