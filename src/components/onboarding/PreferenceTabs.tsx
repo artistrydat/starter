@@ -5,44 +5,15 @@ import { ActivityIndicator, ScrollView, TouchableOpacity, View } from 'react-nat
 
 import { EditPreferencesModal } from './EditPreferencesModal';
 
-import { AppText } from '@/src/components/ui';
+import { AppText, Tabs } from '@/src/components/ui';
 import { PreferencesType, sections, BudgetPreference } from '@/src/types/preferences';
+import { TabItem } from '@/src/types/tabs';
 import { useTravelPreferencesStore } from '@/store/store';
 
 // Style native components with class name props enabled
 const StyledView = View as typeof View & { className?: string };
 const StyledTouchableOpacity = TouchableOpacity as typeof TouchableOpacity & { className?: string };
 const StyledScrollView = ScrollView as typeof ScrollView & { className?: string };
-
-type TabButtonProps = {
-  section: keyof typeof sections;
-  isActive: boolean;
-  hasValues: boolean;
-  onPress: () => void;
-};
-
-const TabButton = ({ section, isActive, hasValues, onPress }: TabButtonProps) => (
-  <StyledTouchableOpacity
-    onPress={onPress}
-    className={`flex-row items-center border-b-2 px-4 py-3 ${
-      isActive ? 'bg-quaternary border-secondary' : 'hover:bg-quaternary/10 border-transparent'
-    }`}>
-    <StyledView className="relative">
-      <AppText size="sm" className="mr-2">
-        {sections[section].emoji}
-      </AppText>
-      {hasValues && (
-        <StyledView className="bg-secondary absolute -right-1 -top-1 h-2 w-2 rounded-full" />
-      )}
-    </StyledView>
-    <AppText
-      size="sm"
-      weight={isActive ? 'bold' : 'normal'}
-      color={isActive ? 'secondary' : 'primary'}>
-      {sections[section].title}
-    </AppText>
-  </StyledTouchableOpacity>
-);
 
 type PreferenceItemProps = {
   value: string;
@@ -52,7 +23,7 @@ type PreferenceItemProps = {
 const PreferenceItem = ({ value, onRemove }: PreferenceItemProps) => (
   <StyledTouchableOpacity
     onPress={onRemove}
-    className="bg-primary/20 mb-2 mr-2 flex-row items-center rounded-full px-4 py-2">
+    className="mb-2 mr-2 flex-row items-center rounded-full bg-primary/20 px-4 py-2">
     <AppText size="sm" color="primary" weight="medium" className="mr-2">
       {value}
     </AppText>
@@ -99,7 +70,7 @@ const TabContent = ({ activeTab, values, onUpdatePreferences, onEdit }: TabConte
   };
 
   return (
-    <StyledView className="bg-quaternary/10 rounded-xl p-4">
+    <StyledView className="rounded-xl bg-quaternary/10 p-4">
       <StyledView className="mb-4 flex-row items-center justify-between">
         <StyledView className="flex-row items-center">
           <AppText size="xl" className="mr-2">
@@ -109,19 +80,19 @@ const TabContent = ({ activeTab, values, onUpdatePreferences, onEdit }: TabConte
             {sections[activeTab].title}
           </AppText>
         </StyledView>
-        <StyledTouchableOpacity onPress={onEdit} className="bg-secondary/20 rounded-full p-2">
+        <StyledTouchableOpacity onPress={onEdit} className="rounded-full bg-secondary/20 p-2">
           <MaterialCommunityIcons name="pencil" size={20} color="#C5E7E3" />
         </StyledTouchableOpacity>
       </StyledView>
 
       {activeTab === 'budget' && isBudgetPreference(values) ? (
         <StyledView className="flex-row flex-wrap">
-          <StyledView className="bg-primary/20 mb-2 mr-2 rounded-full px-4 py-2">
+          <StyledView className="mb-2 mr-2 rounded-full bg-primary/20 px-4 py-2">
             <AppText size="sm" color="primary" weight="medium">
               {getBudgetRangeText(values.amount)}
             </AppText>
           </StyledView>
-          <StyledView className="bg-primary/20 mb-2 mr-2 rounded-full px-4 py-2">
+          <StyledView className="mb-2 mr-2 rounded-full bg-primary/20 px-4 py-2">
             <AppText size="sm" color="primary" weight="medium">
               {values.style[0]}
             </AppText>
@@ -166,6 +137,13 @@ export const PreferenceTabs = ({ activeTab, onTabChange }: PreferenceTabsProps) 
     fetchPreferences();
   }, [fetchPreferences]);
 
+  // Convert sections to TabItem format for the Tabs component
+  const tabItems: TabItem[] = Object.entries(sections).map(([key, section]) => ({
+    id: key,
+    label: section.title,
+    icon: section.emoji,
+  }));
+
   const handleUpdatePreferences = async (
     type: keyof PreferencesType,
     values: string[] | BudgetPreference
@@ -175,14 +153,6 @@ export const PreferenceTabs = ({ activeTab, onTabChange }: PreferenceTabsProps) 
 
   const handleEditTab = (section: keyof typeof sections) => {
     setEditingSection(section);
-  };
-
-  const hasValues = (section: keyof PreferencesType) => {
-    const value = getPreferenceValue(preferences, section);
-    if (section === 'budget' && isBudgetPreference(value)) {
-      return true; // Budget always has a value
-    }
-    return Array.isArray(value) && value.length > 0;
   };
 
   if (isLoading) {
@@ -205,26 +175,14 @@ export const PreferenceTabs = ({ activeTab, onTabChange }: PreferenceTabsProps) 
 
   return (
     <StyledView className="flex-1">
-      <StyledView className="border-tertiary/10 bg-quaternary/10 mx-4 rounded-xl">
-        <StyledScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 4 }}>
-          <StyledView className="flex-row">
-            {Object.entries(sections).map(([key]) => {
-              const section = key as keyof typeof sections;
-              return (
-                <TabButton
-                  key={key}
-                  section={section}
-                  isActive={activeTab === section}
-                  hasValues={hasValues(section)}
-                  onPress={() => onTabChange(section)}
-                />
-              );
-            })}
-          </StyledView>
-        </StyledScrollView>
+      <StyledView className="mx-4 rounded-xl border-tertiary/10 bg-quaternary/10">
+        <Tabs
+          items={tabItems}
+          activeTab={activeTab}
+          onTabChange={(tabId) => onTabChange(tabId as keyof typeof sections)}
+          variant="underline"
+          size="md"
+        />
       </StyledView>
 
       <StyledScrollView className="flex-1 px-4">
