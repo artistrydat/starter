@@ -180,7 +180,7 @@ export const PreferenceTabs = ({ activeTab, onTabChange }: PreferenceTabsProps) 
           items={tabItems}
           activeTab={activeTab}
           onTabChange={(tabId) => onTabChange(tabId as keyof typeof sections)}
-          variant="underline"
+          variant="pills"
           size="md"
         />
       </StyledView>

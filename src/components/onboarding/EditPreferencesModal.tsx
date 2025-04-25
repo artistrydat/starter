@@ -99,7 +99,7 @@ export function EditPreferencesModal({
                     Edit {sections[section].title}
                   </AppText>
                 </View>
-                <TouchableOpacity onPress={onClose} className="bg-quaternary/20 rounded-full p-2">
+                <TouchableOpacity onPress={onClose} className="rounded-full bg-quaternary/20 p-2">
                   <MaterialCommunityIcons name="close" size={24} color="#C5E7E3" />
                 </TouchableOpacity>
               </View>
@@ -111,7 +111,7 @@ export function EditPreferencesModal({
                     Daily Budget Amount ($)
                   </AppText>
                   <TextInput
-                    className="bg-quaternary/20 mb-2 rounded-lg px-4 py-3 text-white"
+                    className="mb-2 rounded-lg bg-quaternary/20 px-4 py-3 text-white"
                     keyboardType="numeric"
                     value={String(budgetValues.amount)}
                     onChangeText={handleBudgetChange}
@@ -148,21 +148,8 @@ export function EditPreferencesModal({
               )}
 
               {/* Action Buttons */}
-              <View className="flex-row space-x-2">
-                <Button
-                  title="Cancel"
-                  color="secondary"
-                  size="lg"
-                  onPress={onClose}
-                  className="flex-1"
-                />
-                <Button
-                  title="Save Changes"
-                  color="primary"
-                  size="lg"
-                  onPress={handleSave}
-                  className="flex-1"
-                />
+              <View className="flex-row justify-end">
+                <Button title="Save Changes" color="primary" size="sm" onPress={handleSave} />
               </View>
             </View>
           </BlurView>

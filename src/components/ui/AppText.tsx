@@ -70,7 +70,6 @@ export function AppText({
 
         // Enhanced base styles
         'font-sans tracking-wide antialiased',
-        'selection:bg-primary/20',
         className
       )}
       {...props}>

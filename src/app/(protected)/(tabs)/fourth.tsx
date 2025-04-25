@@ -18,7 +18,7 @@ export default function FourthScreen() {
         <AppText size="3xl" weight="bold" color="primary" align="center">
           Your Travel Profile ✈️
         </AppText>
-        <AppText size="lg" color="secondary" className="mt-2 text-center opacity-80">
+        <AppText size="lg" color="primary" className="mt-2 text-center opacity-80">
           Here's how you like to travel
         </AppText>
       </View>
