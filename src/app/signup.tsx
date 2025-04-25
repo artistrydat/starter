@@ -1,9 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { View, Alert } from 'react-native';
+import { View, Alert, Pressable } from 'react-native';
 
 import { SignupForm } from '@/src/components/auth';
-import { Button } from '@/src/components/ui';
+import { AppText } from '@/src/components/ui';
 import { supabase } from '@/src/utils/supabaseClient';
 
 const SignupScreen = () => {
@@ -15,8 +15,8 @@ const SignupScreen = () => {
       setLoading(true);
       console.log('Attempting to sign up user with email:', email);
 
-      // Simple signup with Supabase - the database trigger will handle profile creation
-      const { error } = await supabase.auth.signUp({
+      // Simple signup with Supabase
+      const { error, data } = await supabase.auth.signUp({
         email,
         password,
       });
@@ -59,17 +59,26 @@ const SignupScreen = () => {
     }
   };
 
+  const handleGoogleSignUp = () => {
+    // TODO: Implement Google sign up
+    Alert.alert('Coming Soon', 'Google sign up will be implemented soon.');
+  };
+
   return (
-    <View className="flex-1 justify-center p-4">
-      <SignupForm onSubmit={handleSignup} loading={loading} />
-      <View className="mt-4">
-        <Button
-          color="tertiary"
-          size="lg"
-          title="Already have an account? Login"
-          onPress={() => router.replace('/login')}
-          disabled={loading}
-        />
+    <View className="flex-1 justify-between bg-white p-5">
+      <View className="flex-1 justify-center">
+        <SignupForm onSubmit={handleSignup} loading={loading} onGoogleSignUp={handleGoogleSignUp} />
+      </View>
+
+      <View className="mb-5 items-center">
+        <AppText size="sm">
+          Already have account?{' '}
+          <Pressable onPress={() => router.replace('/login')}>
+            <AppText size="sm" color="primary">
+              Sign in
+            </AppText>
+          </Pressable>
+        </AppText>
       </View>
     </View>
   );

@@ -1,50 +1,32 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, TextInput, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 
 import { AppText, Button } from '@/src/components/ui';
 
 type SignupFormProps = {
   onSubmit: (email: string, password: string) => void;
   loading?: boolean;
+  onGoogleSignUp?: () => void;
 };
 
-export function SignupForm({ onSubmit, loading = false }: SignupFormProps) {
+export function SignupForm({ onSubmit, loading = false, onGoogleSignUp }: SignupFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-
-  const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validateForm = () => {
-    let isValid = true;
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email) {
-      setEmailError('Email is required');
-      isValid = false;
-    } else if (!emailRegex.test(email)) {
-      setEmailError('Please enter a valid email address');
-      isValid = false;
-    } else {
-      setEmailError('');
+    if (!email || !password || !confirmPassword) {
+      return false;
     }
 
-    // Password validation
-    if (!password) {
-      setPasswordError('Password is required');
-      isValid = false;
-    } else if (password.length < 6) {
-      setPasswordError('Password must be at least 6 characters long');
-      isValid = false;
-    } else {
-      setPasswordError('');
+    if (password !== confirmPassword) {
+      return false;
     }
 
-    return isValid;
+    return true;
   };
 
   const handleSubmit = () => {
@@ -54,98 +36,105 @@ export function SignupForm({ onSubmit, loading = false }: SignupFormProps) {
   };
 
   return (
-    <View className="w-full space-y-6 p-6">
-      <AppText size="3xl" weight="bold" color="primary" align="center" className="mb-2">
-        ✨ Create Account
-      </AppText>
-      <AppText size="lg" color="secondary" align="center" className="mb-6">
-        Join us on this amazing journey
-      </AppText>
+    <View className="w-full space-y-4">
+      {/* Signup Illustration */}
+      <View className="mb-3 items-center">
+        <Image
+          source={{ uri: 'https://img.icons8.com/color/344/mobile-payment.png' }}
+          style={{ width: 120, height: 120 }}
+          resizeMode="contain"
+        />
+      </View>
 
-      <View className="space-y-4">
-        <View>
-          <BlurView
-            intensity={20}
-            tint="dark"
-            className={`overflow-hidden rounded-2xl border ${
-              emailError ? 'border-red-500' : 'border-white/10'
-            }`}>
-            <TextInput
-              placeholder="Email"
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                setEmailError('');
-              }}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              className="px-6 py-4 text-lg text-white"
-              placeholderTextColor="rgba(255, 255, 255, 0.5)"
-              editable={!loading}
-            />
-          </BlurView>
-          {emailError ? (
-            <AppText size="sm" color="error" className="ml-2 mt-1">
-              {emailError}
-            </AppText>
-          ) : null}
-        </View>
+      <View className="mb-6 items-center">
+        <AppText size="xl" weight="bold" className="mb-2">
+          Let's Get Started
+        </AppText>
+        <AppText size="sm" color="quaternary">
+          create an account to get all features
+        </AppText>
+      </View>
 
-        <View>
-          <BlurView
-            intensity={20}
-            tint="dark"
-            className={`flex-row items-center overflow-hidden rounded-2xl border ${
-              passwordError ? 'border-red-500' : 'border-white/10'
-            }`}>
-            <TextInput
-              placeholder="Password"
-              value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                setPasswordError('');
-              }}
-              secureTextEntry={!showPassword}
-              className="flex-1 px-6 py-4 text-lg text-white"
-              placeholderTextColor="rgba(255, 255, 255, 0.5)"
-              editable={!loading}
-            />
-            <TouchableOpacity
-              onPress={() => setShowPassword(!showPassword)}
-              className="px-4"
-              disabled={loading}>
-              <MaterialCommunityIcons
-                name={showPassword ? 'eye-off' : 'eye'}
-                size={24}
-                color="rgba(255, 255, 255, 0.5)"
-              />
-            </TouchableOpacity>
-          </BlurView>
-          {passwordError ? (
-            <AppText size="sm" color="error" className="ml-2 mt-1">
-              {passwordError}
-            </AppText>
-          ) : null}
-        </View>
+      <View className="mb-2 flex-row items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-4">
+        <MaterialCommunityIcons name="email-outline" size={20} color="gray" className="mr-2" />
+        <TextInput
+          placeholder="enter your email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          className="flex-1 pl-2 text-base text-gray-800"
+          placeholderTextColor="rgba(0, 0, 0, 0.4)"
+          editable={!loading}
+        />
+      </View>
+
+      <View className="mb-2 flex-row items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-4">
+        <MaterialCommunityIcons name="lock-outline" size={20} color="gray" className="mr-2" />
+        <TextInput
+          placeholder="password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!showPassword}
+          className="flex-1 pl-2 text-base text-gray-800"
+          placeholderTextColor="rgba(0, 0, 0, 0.4)"
+          editable={!loading}
+        />
+        <TouchableOpacity onPress={() => setShowPassword(!showPassword)} disabled={loading}>
+          <MaterialCommunityIcons name={showPassword ? 'eye-off' : 'eye'} size={20} color="gray" />
+        </TouchableOpacity>
+      </View>
+
+      <View className="mb-2 flex-row items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-4">
+        <MaterialCommunityIcons name="lock-outline" size={20} color="gray" className="mr-2" />
+        <TextInput
+          placeholder="confirm password"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry={!showConfirmPassword}
+          className="flex-1 pl-2 text-base text-gray-800"
+          placeholderTextColor="rgba(0, 0, 0, 0.4)"
+          editable={!loading}
+        />
+        <TouchableOpacity
+          onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+          disabled={loading}>
+          <MaterialCommunityIcons
+            name={showConfirmPassword ? 'eye-off' : 'eye'}
+            size={20}
+            color="gray"
+          />
+        </TouchableOpacity>
       </View>
 
       <Button
-        title={loading ? 'Creating Account...' : 'Create Account'}
+        title="Sign Up"
         onPress={handleSubmit}
         color="primary"
         size="lg"
-        disabled={loading || !email || !password}
+        className="mt-4 rounded-lg py-4"
+        disabled={loading}
       />
 
-      {loading && (
-        <View className="absolute inset-0 items-center justify-center bg-black/50">
-          <ActivityIndicator size="large" color="#C5E7E3" />
-        </View>
-      )}
+      {loading && <ActivityIndicator size="small" color="#000" className="my-2" />}
 
-      <AppText size="sm" color="tertiary" align="center">
-        By signing up, you agree to our Terms of Service and Privacy Policy
-      </AppText>
+      <View className="mb-4 mt-4 items-center">
+        <AppText size="sm" color="quaternary">
+          You can Connect with
+        </AppText>
+      </View>
+
+      <TouchableOpacity
+        onPress={onGoogleSignUp}
+        className="flex-row items-center justify-center rounded-lg border border-gray-300 px-4 py-3"
+        disabled={loading}>
+        <Image
+          source={{ uri: 'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg' }}
+          style={{ width: 20, height: 20 }}
+          className="mr-2"
+        />
+        <AppText>Sign Up with Google</AppText>
+      </TouchableOpacity>
     </View>
   );
 }
