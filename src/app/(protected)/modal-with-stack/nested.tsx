@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 
-import { AppText } from '@/src/components/AppText';
+import { AppText } from '@/src/components/ui';
 
 export default function NestedScreen() {
   return (

@@ -1,8 +1,7 @@
 import { Link } from 'expo-router';
 import { View } from 'react-native';
 
-import { AppText } from '@/src/components/AppText';
-import { Button } from '@/src/components/Button';
+import { AppText, Button } from '@/src/components/ui';
 
 export default function SecondNestedScreen() {
   return (
@@ -11,7 +10,7 @@ export default function SecondNestedScreen() {
         Second Nested Screen
       </AppText>
       <Link href="/second/also-nested" push asChild>
-        <Button title="Push to /second/also-nested" theme="primary" size="lg" />
+        <Button title="Push to /second/also-nested" color="primary" size="lg" />
       </Link>
     </View>
   );

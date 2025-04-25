@@ -3,8 +3,7 @@ import { BlurView } from 'expo-blur';
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity } from 'react-native';
 
-import { AppText } from './AppText';
-import { Button } from './Button';
+import { AppText, Button } from '@/src/components/ui';
 
 type LoginFormProps = {
   onSubmit: (email: string, password: string) => void;
@@ -64,7 +63,7 @@ export function LoginForm({ onSubmit, onForgotPassword }: LoginFormProps) {
       <Button
         title="Sign In"
         onPress={() => onSubmit(email, password)}
-        theme="primary"
+        color="primary"
         size="lg"
         disabled={!email || !password}
       />

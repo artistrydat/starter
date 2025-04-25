@@ -1,6 +1,6 @@
 import { Text } from 'react-native';
 
-import { cn } from '../utils/cn';
+import { cn } from '../../utils/cn';
 
 type AppTextProps = {
   children: React.ReactNode;

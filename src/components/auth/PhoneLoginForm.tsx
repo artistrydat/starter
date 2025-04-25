@@ -4,10 +4,10 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { View, TextInput, Alert } from 'react-native';
 
-import { AppText } from './AppText';
-import { Button } from './Button';
 import OTPVerification from './OTPVerification';
-import { supabase } from '../utils/supabaseClient';
+import { supabase } from '../../utils/supabaseClient';
+
+import { AppText, Button } from '@/src/components/ui';
 
 type PhoneLoginFormProps = {
   onSubmit: (phoneNumber: string) => void;
@@ -89,7 +89,7 @@ export function PhoneLoginForm({ onSubmit }: PhoneLoginFormProps) {
       <Button
         title={loading ? 'Sending...' : 'Continue'}
         onPress={handleSendOTP}
-        theme="primary"
+        color="primary"
         size="lg"
         disabled={!phoneNumber || loading}
       />

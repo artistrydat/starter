@@ -3,8 +3,7 @@ import { BlurView } from 'expo-blur';
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 
-import { AppText } from './AppText';
-import { Button } from './Button';
+import { AppText, Button } from '@/src/components/ui';
 
 type SignupFormProps = {
   onSubmit: (email: string, password: string, name: string) => void;
@@ -170,7 +169,7 @@ export function SignupForm({ onSubmit, loading = false }: SignupFormProps) {
       <Button
         title={loading ? 'Creating Account...' : 'Create Account'}
         onPress={handleSubmit}
-        theme="primary"
+        color="primary"
         size="lg"
         disabled={loading || !email || !password || !name}
       />

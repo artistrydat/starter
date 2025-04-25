@@ -3,7 +3,7 @@ import { useState, useContext } from 'react';
 import { View, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import OTPVerification from '@/src/components/OTPVerification';
+import { OTPVerification } from '@/src/components/auth';
 import { AuthContext } from '@/src/utils/authContext';
 import { supabase } from '@/src/utils/supabaseClient';
 

@@ -2,8 +2,7 @@ import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, View, Modal } from 'react-native';
 
-import { AppText } from '@/src/components/AppText';
-import { Button } from '@/src/components/Button';
+import { AppText, Button } from '@/src/components/ui';
 
 export default function IndexScreen() {
   const router = useRouter();
@@ -31,40 +30,30 @@ export default function IndexScreen() {
       <AppText size="2xl" weight="bold" color="primary" align="center">
         Index Screen
       </AppText>
-      
+
       <Link href="/home-nested" push asChild>
-        <Button title="Push to /home-nested" theme="primary" size="lg" />
+        <Button title="Push to /home-nested" color="primary" size="lg" />
       </Link>
-      
+
       {canGoBack ? (
-        <Button
-          title="Back"
-          theme="secondary"
-          size="lg"
-          onPress={() => router.back()}
-        />
+        <Button title="Back" color="secondary" size="lg" onPress={() => router.back()} />
       ) : null}
-      
-      <Button 
-        title="Open Alert" 
-        theme="secondary" 
+
+      <Button title="Open Alert" color="secondary" size="lg" onPress={handleOpenAlert} />
+
+      <Button
+        title="Open RN Modal"
+        color="secondary"
         size="lg"
-        onPress={handleOpenAlert} 
+        onPress={() => setModalVisible(true)}
       />
-      
-      <Button 
-        title="Open RN Modal" 
-        theme="secondary" 
-        size="lg"
-        onPress={() => setModalVisible(true)} 
-      />
-      
+
       <Link href="/modal" push asChild>
-        <Button title="Open Router Modal" theme="secondary" size="lg" />
+        <Button title="Open Router Modal" color="secondary" size="lg" />
       </Link>
-      
+
       <Link href="/modal-with-stack" push asChild>
-        <Button title="Open Router Modal (Stack)" theme="secondary" size="lg" />
+        <Button title="Open Router Modal (Stack)" color="secondary" size="lg" />
       </Link>
 
       <Modal
@@ -79,7 +68,7 @@ export default function IndexScreen() {
             </AppText>
             <Button
               title="Close"
-              theme="secondary"
+              color="secondary"
               size="lg"
               onPress={() => setModalVisible(false)}
             />

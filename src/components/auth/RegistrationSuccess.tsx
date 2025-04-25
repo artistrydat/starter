@@ -2,8 +2,7 @@ import { BlurView } from 'expo-blur';
 import React from 'react';
 import { View } from 'react-native';
 
-import { AppText } from './AppText';
-import { Button } from './Button';
+import { AppText, Button } from '@/src/components/ui';
 
 type RegistrationSuccessProps = {
   onContinue?: () => void;
@@ -28,7 +27,7 @@ export default function RegistrationSuccess({ onContinue }: RegistrationSuccessP
         <Button
           title="Let's Begin"
           onPress={onContinue}
-          theme="primary"
+          color="primary"
           size="lg"
           className="mt-8 w-full"
         />

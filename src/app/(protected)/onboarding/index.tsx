@@ -2,8 +2,7 @@ import { Link } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
 
-import { AppText } from '@/src/components/AppText';
-import { Button } from '@/src/components/Button';
+import { AppText, Button } from '@/src/components/ui';
 
 export default function OnboardingIndex() {
   return (

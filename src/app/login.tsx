@@ -2,8 +2,8 @@ import { useRouter } from 'expo-router';
 import { useContext, useState } from 'react';
 import { View, Alert } from 'react-native';
 
-import { Button } from '@/src/components/Button';
-import { LoginForm } from '@/src/components/LoginForm';
+import { LoginForm } from '@/src/components/auth';
+import { Button } from '@/src/components/ui';
 import { AuthContext } from '@/src/utils/authContext';
 
 const LoginScreen = () => {
@@ -36,7 +36,7 @@ const LoginScreen = () => {
       <LoginForm onSubmit={handleLogin} onForgotPassword={handleForgotPassword} />
       <View className="mt-4">
         <Button
-          theme="secondary"
+          color="secondary"
           size="lg"
           title="Don't have an account? Sign up"
           onPress={() => router.replace('/signup')}

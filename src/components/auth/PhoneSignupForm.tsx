@@ -4,11 +4,11 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { View, TextInput, Alert } from 'react-native';
 
-import { AppText } from './AppText';
-import { Button } from './Button';
 import OTPVerification from './OTPVerification';
 import RegistrationSuccess from './RegistrationSuccess';
-import { supabase } from '../utils/supabaseClient';
+import { supabase } from '../../utils/supabaseClient';
+
+import { AppText, Button } from '@/src/components/ui';
 
 type PhoneSignupFormProps = {
   onSubmit: (phoneNumber: string, fullName: string) => void;
@@ -149,7 +149,7 @@ export function PhoneSignupForm({ onSubmit }: PhoneSignupFormProps) {
       <Button
         title="Create Account"
         onPress={() => onSubmit(phoneNumber, fullName)}
-        theme="primary"
+        color="primary"
         size="lg"
         disabled={!phoneNumber || !fullName}
       />

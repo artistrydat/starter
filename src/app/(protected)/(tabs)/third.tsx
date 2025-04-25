@@ -1,8 +1,7 @@
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 
-import { AppText } from '@/src/components/AppText';
-import { Button } from '@/src/components/Button';
+import { AppText, Button } from '@/src/components/ui';
 
 export default function ThirdScreen() {
   const router = useRouter();
@@ -12,7 +11,7 @@ export default function ThirdScreen() {
       <AppText size="2xl" weight="bold" color="primary" align="center">
         Third Screen
       </AppText>
-      <Button title="Back" theme="secondary" size="lg" onPress={() => router.back()} />
+      <Button title="Back" color="secondary" size="lg" onPress={() => router.back()} />
     </View>
   );
 }

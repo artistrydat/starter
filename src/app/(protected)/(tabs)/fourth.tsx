@@ -2,9 +2,9 @@ import { useRouter } from 'expo-router';
 import { useContext, useState } from 'react';
 import { View } from 'react-native';
 
-import { AppText } from '@/src/components/AppText';
-import { Button } from '@/src/components/Button';
-import { PreferenceTabs, sections } from '@/src/components/PreferenceTabs';
+import { PreferenceTabs } from '@/src/components/onboarding';
+import { AppText, Button } from '@/src/components/ui';
+import { sections } from '@/src/types/preferences';
 import { AuthContext } from '@/src/utils/authContext';
 
 export default function FourthScreen() {
@@ -26,8 +26,8 @@ export default function FourthScreen() {
       <PreferenceTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       <View className="space-y-4 p-6">
-        <Button title="Back" theme="secondary" size="sm" onPress={() => router.back()} />
-        <Button title="Log out!" onPress={authState.logOut} theme="primary" size="sm" />
+        <Button title="Back" color="secondary" size="sm" onPress={() => router.back()} />
+        <Button title="Log out!" onPress={authState.logOut} color="primary" size="sm" />
       </View>
     </View>
   );

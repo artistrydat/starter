@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
-import { supabase } from '@/src/utils/supabaseClient';
 import { PreferencesType, BudgetPreference } from '@/src/types/preferences';
+import { supabase } from '@/src/utils/supabaseClient';
 
 export interface BearState {
   bears: number;
@@ -32,7 +32,7 @@ export const useTravelPreferencesStore = create<TravelPreferencesState>((set, ge
     travel_purpose: [],
     budget: {
       amount: 50,
-      style: []
+      style: [],
     },
     food_preferences: [],
     tech_preferences: [],

@@ -1,8 +1,7 @@
 import { Link, useRouter } from 'expo-router';
 import { View } from 'react-native';
 
-import { AppText } from '@/src/components/AppText';
-import { Button } from '@/src/components/Button';
+import { AppText, Button } from '@/src/components/ui';
 
 export default function SecondScreen() {
   const router = useRouter();
@@ -13,9 +12,9 @@ export default function SecondScreen() {
         Second Screen
       </AppText>
       <Link href="/second/nested" push asChild>
-        <Button title="Push to /second/nested" theme="primary" size="lg" />
+        <Button title="Push to /second/nested" color="primary" size="lg" />
       </Link>
-      <Button title="Back" theme="secondary" size="lg" onPress={() => router.back()} />
+      <Button title="Back" color="secondary" size="lg" onPress={() => router.back()} />
     </View>
   );
 }

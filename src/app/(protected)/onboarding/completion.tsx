@@ -2,11 +2,10 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useContext } from 'react';
 import { View } from 'react-native';
 
-import { AppText } from '@/src/components/AppText';
-import { Button } from '@/src/components/Button';
+import { AppText, Button } from '@/src/components/ui';
+import { sections } from '@/src/types/preferences';
 import { AuthContext } from '@/src/utils/authContext';
 import { supabase } from '@/src/utils/supabaseClient';
-import { sections } from '@/src/types/preferences';
 
 export default function CompletionScreen() {
   const router = useRouter();
@@ -49,7 +48,7 @@ export default function CompletionScreen() {
         travel_purpose: preferences.travel_purpose || [],
         budget: {
           amount: budgetRange,
-          style: [getBudgetCategory(budgetRange)]
+          style: [getBudgetCategory(budgetRange)],
         },
         food_preferences: preferences.food_preferences || [],
         tech_preferences: preferences.tech_preferences || [],
@@ -104,7 +103,11 @@ export default function CompletionScreen() {
               Your travel profile is set! ✨
             </AppText>
 
-            <AppText size="lg" color="secondary" align="center" className="max-w-[280px] opacity-80">
+            <AppText
+              size="lg"
+              color="secondary"
+              align="center"
+              className="max-w-[280px] opacity-80">
               We've got everything we need to make your trips amazing
             </AppText>
 
@@ -137,7 +140,7 @@ export default function CompletionScreen() {
                   </View>
                 );
               })}
-              
+
               {/* Display Budget Range and Style */}
               <View className="mb-4">
                 <View className="flex-row items-center">

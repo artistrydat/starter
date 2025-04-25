@@ -2,8 +2,8 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
 
-import { AppText } from '@/src/components/AppText';
-import OnboardingScreen from '@/src/components/OnboardingScreen';
+import { OnboardingScreen } from '@/src/components/onboarding';
+import { AppText } from '@/src/components/ui';
 
 export default function PreferencesScreen() {
   const router = useRouter();

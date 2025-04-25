@@ -1,12 +1,18 @@
+import 'nativewind';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, TouchableOpacity, View } from 'react-native';
 
-import { AppText } from './AppText';
 import { EditPreferencesModal } from './EditPreferencesModal';
 
+import { AppText } from '@/src/components/ui';
 import { PreferencesType, sections, BudgetPreference } from '@/src/types/preferences';
 import { useTravelPreferencesStore } from '@/store/store';
+
+// Style native components with class name props enabled
+const StyledView = View as typeof View & { className?: string };
+const StyledTouchableOpacity = TouchableOpacity as typeof TouchableOpacity & { className?: string };
+const StyledScrollView = ScrollView as typeof ScrollView & { className?: string };
 
 type TabButtonProps = {
   section: keyof typeof sections;
@@ -16,24 +22,26 @@ type TabButtonProps = {
 };
 
 const TabButton = ({ section, isActive, hasValues, onPress }: TabButtonProps) => (
-  <TouchableOpacity
+  <StyledTouchableOpacity
     onPress={onPress}
     className={`flex-row items-center border-b-2 px-4 py-3 ${
       isActive ? 'bg-quaternary border-secondary' : 'hover:bg-quaternary/10 border-transparent'
     }`}>
-    <View className="relative">
+    <StyledView className="relative">
       <AppText size="sm" className="mr-2">
         {sections[section].emoji}
       </AppText>
-      {hasValues && <View className="bg-secondary absolute -right-1 -top-1 h-2 w-2 rounded-full" />}
-    </View>
+      {hasValues && (
+        <StyledView className="bg-secondary absolute -right-1 -top-1 h-2 w-2 rounded-full" />
+      )}
+    </StyledView>
     <AppText
       size="sm"
       weight={isActive ? 'bold' : 'normal'}
       color={isActive ? 'secondary' : 'primary'}>
       {sections[section].title}
     </AppText>
-  </TouchableOpacity>
+  </StyledTouchableOpacity>
 );
 
 type PreferenceItemProps = {
@@ -42,25 +50,34 @@ type PreferenceItemProps = {
 };
 
 const PreferenceItem = ({ value, onRemove }: PreferenceItemProps) => (
-  <TouchableOpacity
+  <StyledTouchableOpacity
     onPress={onRemove}
     className="bg-primary/20 mb-2 mr-2 flex-row items-center rounded-full px-4 py-2">
     <AppText size="sm" color="primary" weight="medium" className="mr-2">
       {value}
     </AppText>
     <MaterialCommunityIcons name="close" size={16} color="#FF6B6B" />
-  </TouchableOpacity>
+  </StyledTouchableOpacity>
 );
 
 const isBudgetPreference = (value: unknown): value is BudgetPreference => {
   return typeof value === 'object' && value !== null && 'amount' in value && 'style' in value;
 };
 
+const defaultBudgetPreference: BudgetPreference = {
+  amount: 50,
+  style: ['Budget'],
+};
+
 const getPreferenceValue = (
   preferences: PreferencesType,
   section: keyof typeof sections
-): string[] | BudgetPreference | undefined => {
-  return preferences[section as keyof PreferencesType];
+): string[] | BudgetPreference => {
+  const value = preferences[section as keyof PreferencesType];
+  if (section === 'budget') {
+    return (value as BudgetPreference) || defaultBudgetPreference;
+  }
+  return (value as string[]) || [];
 };
 
 type TabContentProps = {
@@ -82,36 +99,36 @@ const TabContent = ({ activeTab, values, onUpdatePreferences, onEdit }: TabConte
   };
 
   return (
-    <View className="bg-quaternary/10 rounded-xl p-4">
-      <View className="mb-4 flex-row items-center justify-between">
-        <View className="flex-row items-center">
+    <StyledView className="bg-quaternary/10 rounded-xl p-4">
+      <StyledView className="mb-4 flex-row items-center justify-between">
+        <StyledView className="flex-row items-center">
           <AppText size="xl" className="mr-2">
             {sections[activeTab].emoji}
           </AppText>
           <AppText size="lg" weight="bold" color="primary">
             {sections[activeTab].title}
           </AppText>
-        </View>
-        <TouchableOpacity onPress={onEdit} className="bg-secondary/20 rounded-full p-2">
+        </StyledView>
+        <StyledTouchableOpacity onPress={onEdit} className="bg-secondary/20 rounded-full p-2">
           <MaterialCommunityIcons name="pencil" size={20} color="#C5E7E3" />
-        </TouchableOpacity>
-      </View>
+        </StyledTouchableOpacity>
+      </StyledView>
 
       {activeTab === 'budget' && isBudgetPreference(values) ? (
-        <View className="flex-row flex-wrap">
-          <View className="bg-primary/20 mb-2 mr-2 rounded-full px-4 py-2">
+        <StyledView className="flex-row flex-wrap">
+          <StyledView className="bg-primary/20 mb-2 mr-2 rounded-full px-4 py-2">
             <AppText size="sm" color="primary" weight="medium">
               {getBudgetRangeText(values.amount)}
             </AppText>
-          </View>
-          <View className="bg-primary/20 mb-2 mr-2 rounded-full px-4 py-2">
+          </StyledView>
+          <StyledView className="bg-primary/20 mb-2 mr-2 rounded-full px-4 py-2">
             <AppText size="sm" color="primary" weight="medium">
               {values.style[0]}
             </AppText>
-          </View>
-        </View>
+          </StyledView>
+        </StyledView>
       ) : Array.isArray(values) && values.length > 0 ? (
-        <View className="flex-row flex-wrap">
+        <StyledView className="flex-row flex-wrap">
           {values.map((value) => (
             <PreferenceItem
               key={value}
@@ -122,15 +139,15 @@ const TabContent = ({ activeTab, values, onUpdatePreferences, onEdit }: TabConte
               }}
             />
           ))}
-        </View>
+        </StyledView>
       ) : (
-        <View className="items-center py-8">
+        <StyledView className="items-center py-8">
           <AppText size="lg" color="tertiary" align="center">
             No preferences added yet.{'\n'}Click the edit button to add some!
           </AppText>
-        </View>
+        </StyledView>
       )}
-    </View>
+    </StyledView>
   );
 };
 
@@ -162,39 +179,38 @@ export const PreferenceTabs = ({ activeTab, onTabChange }: PreferenceTabsProps) 
 
   const hasValues = (section: keyof PreferencesType) => {
     const value = getPreferenceValue(preferences, section);
-    if (!value) return false;
     if (section === 'budget' && isBudgetPreference(value)) {
-      return value.style.length > 0;
+      return true; // Budget always has a value
     }
     return Array.isArray(value) && value.length > 0;
   };
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center">
+      <StyledView className="flex-1 items-center justify-center">
         <ActivityIndicator size="large" color="#C5E7E3" />
-      </View>
+      </StyledView>
     );
   }
 
   if (error) {
     return (
-      <View className="flex-1 items-center justify-center">
+      <StyledView className="flex-1 items-center justify-center">
         <AppText color="error" size="lg">
           {error}
         </AppText>
-      </View>
+      </StyledView>
     );
   }
 
   return (
-    <View className="flex-1">
-      <View className="border-tertiary/10 bg-quaternary/10 mx-4 rounded-xl">
-        <ScrollView
+    <StyledView className="flex-1">
+      <StyledView className="border-tertiary/10 bg-quaternary/10 mx-4 rounded-xl">
+        <StyledScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 4 }}>
-          <View className="flex-row">
+          <StyledView className="flex-row">
             {Object.entries(sections).map(([key]) => {
               const section = key as keyof typeof sections;
               return (
@@ -207,12 +223,12 @@ export const PreferenceTabs = ({ activeTab, onTabChange }: PreferenceTabsProps) 
                 />
               );
             })}
-          </View>
-        </ScrollView>
-      </View>
+          </StyledView>
+        </StyledScrollView>
+      </StyledView>
 
-      <ScrollView className="flex-1 px-4">
-        <View className="mt-4">
+      <StyledScrollView className="flex-1 px-4">
+        <StyledView className="mt-4">
           <TabContent
             activeTab={activeTab}
             values={
@@ -223,22 +239,18 @@ export const PreferenceTabs = ({ activeTab, onTabChange }: PreferenceTabsProps) 
             onUpdatePreferences={handleUpdatePreferences}
             onEdit={() => handleEditTab(activeTab)}
           />
-        </View>
-      </ScrollView>
+        </StyledView>
+      </StyledScrollView>
 
       {editingSection && (
         <EditPreferencesModal
           visible
           section={editingSection}
-          currentValues={
-            editingSection === 'budget'
-              ? (getPreferenceValue(preferences, editingSection) as BudgetPreference)
-              : ((getPreferenceValue(preferences, editingSection) ?? []) as string[])
-          }
+          currentValues={getPreferenceValue(preferences, editingSection)}
           onSave={handleUpdatePreferences}
           onClose={() => setEditingSection(null)}
         />
       )}
-    </View>
+    </StyledView>
   );
 };

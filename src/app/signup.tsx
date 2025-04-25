@@ -2,8 +2,8 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View, Alert } from 'react-native';
 
-import { Button } from '@/src/components/Button';
-import { SignupForm } from '@/src/components/SignupForm';
+import { SignupForm } from '@/src/components/auth';
+import { Button } from '@/src/components/ui';
 import { supabase } from '@/src/utils/supabaseClient';
 
 const SignupScreen = () => {
@@ -107,7 +107,7 @@ const SignupScreen = () => {
       <SignupForm onSubmit={handleSignup} loading={loading} />
       <View className="mt-4">
         <Button
-          theme="tertiary"
+          color="tertiary"
           size="lg"
           title="Already have an account? Login"
           onPress={() => router.replace('/login')}

@@ -1,14 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useRef, useState } from 'react';
-import {
-  GestureResponderEvent,
-  LayoutChangeEvent,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { GestureResponderEvent, LayoutChangeEvent, TouchableOpacity, View } from 'react-native';
 
-import { AppText } from './AppText';
-import { Button } from './Button';
+import { AppText, Button } from '@/src/components/ui';
 import { sections, PreferencesType } from '@/src/types/preferences';
 
 type OnboardingStepType = {
@@ -103,9 +97,7 @@ export const OnboardingScreen = ({ onComplete }: OnboardingProps) => {
           {currentSection.emoji} {currentSection.title}
         </AppText>
         <AppText size="lg" weight="bold" className="mb-4">
-          {step.type === 'slider'
-            ? "What's your typical travel budget?"
-            : 'Select all that apply'}
+          {step.type === 'slider' ? "What's your typical travel budget?" : 'Select all that apply'}
         </AppText>
 
         {step.type === 'slider' ? (
@@ -163,9 +155,11 @@ export const OnboardingScreen = ({ onComplete }: OnboardingProps) => {
                 </AppText>
                 <AppText
                   size="base"
-                  color={(preferences[step.id] as string[] | undefined)?.includes(option.id)
-                    ? 'secondary'
-                    : 'primary'}>
+                  color={
+                    (preferences[step.id] as string[] | undefined)?.includes(option.id)
+                      ? 'secondary'
+                      : 'primary'
+                  }>
                   {option.label}
                 </AppText>
               </TouchableOpacity>
@@ -177,7 +171,7 @@ export const OnboardingScreen = ({ onComplete }: OnboardingProps) => {
       <View className="bg-quinary border-quaternary/20 border-t p-6">
         <Button
           title={currentStep === STEPS.length - 1 ? 'Complete' : 'Continue'}
-          theme="primary"
+          color="primary"
           size="lg"
           onPress={handleNext}
         />

@@ -2,9 +2,8 @@ import { useRouter } from 'expo-router';
 import { useState, useContext } from 'react';
 import { View, Alert } from 'react-native';
 
-import { AppText } from '@/src/components/AppText';
-import { Button } from '@/src/components/Button';
-import PhoneLoginForm from '@/src/components/PhoneLoginForm';
+import { PhoneLoginForm } from '@/src/components/auth';
+import { AppText, Button } from '@/src/components/ui';
 import { AuthContext } from '@/src/utils/authContext';
 import { supabase } from '@/src/utils/supabaseClient';
 
@@ -52,7 +51,7 @@ const PhoneLoginScreen = () => {
       <PhoneLoginForm onSubmit={handlePhoneLogin} />
       <View className="mt-4">
         <Button
-          theme="secondary"
+          color="secondary"
           size="lg"
           title="Don't have an account? Sign up"
           onPress={() => router.replace('/phone-signup')}

@@ -3,8 +3,7 @@ import { BlurView } from 'expo-blur';
 import React, { useState, useRef, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, Platform, KeyboardAvoidingView } from 'react-native';
 
-import { AppText } from './AppText';
-import { Button } from './Button';
+import { AppText, Button } from '@/src/components/ui';
 
 type OTPVerificationProps = {
   phoneNumber: string;
@@ -105,7 +104,7 @@ export default function OTPVerification({
         <Button
           title="Verify"
           onPress={onVerificationSuccess}
-          theme="primary"
+          color="primary"
           size="lg"
           disabled={otp.some((digit) => digit === '')}
         />
