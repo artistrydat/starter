@@ -6,7 +6,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#5BBFB5', // Brighter teal
+        primary: '#5BBFB5', //  Brighter teal
         secondary: '#EBFA9F', // Keeping light yellow
         tertiary: '#F5F9FA', // Light grayish-blue instead of dark
         quaternary: '#78B0A8', // Lighter sage green
