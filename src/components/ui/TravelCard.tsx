@@ -22,7 +22,7 @@ export const TravelCard: React.FC<TravelCardProps> = ({
   onFavoritePress,
   className,
 }) => {
-  const { title, location, image_url, tags, rating } = destination;
+  const { location, image_url, tags, rating } = destination;
 
   return (
     <TouchableOpacity
@@ -71,9 +71,6 @@ export const TravelCard: React.FC<TravelCardProps> = ({
           {/* Title and Location Container */}
           <View className="absolute bottom-0 left-0 right-0 p-4 shadow-sm">
             <View className="overflow-hidden rounded-xl bg-white/80 p-2 backdrop-blur-sm">
-              <AppText size="xl" weight="bold" color="text">
-                {title}
-              </AppText>
               <AppText size="sm" color="text">
                 {location}
               </AppText>

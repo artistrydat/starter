@@ -84,7 +84,7 @@ export const DayContent = ({ day }: { day: TripDay }) => {
       </AppText>
 
       {day.activities.map((activity) => (
-        <ActivityItem key={activity.id} activity={activity} />
+        <ActivityItem key={activity.id} activity={activity} dayId={day.id} />
       ))}
     </View>
   );

@@ -75,13 +75,12 @@ export default function SecondScreen() {
           <AppText size="2xl" weight="bold" color="primary">
             Plan your next adventure
           </AppText>
-          
+
           {/* Floating Action Button in Header */}
           <TouchableOpacity
             onPress={navigateToCreateDestination}
             className="h-10 w-10 items-center justify-center rounded-full bg-primary shadow-sm"
-            activeOpacity={0.8}
-          >
+            activeOpacity={0.8}>
             <MaterialCommunityIcons name="plus" size={24} color="#fff" />
           </TouchableOpacity>
         </View>

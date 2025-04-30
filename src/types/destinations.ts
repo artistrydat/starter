@@ -42,6 +42,35 @@ export type TripActivity = {
   currency?: string;
   category: 'sightseeing' | 'food' | 'transport' | 'accommodation' | 'other';
   icon?: string;
+  votes?: ActivityVote[];
+  comments?: ActivityComment[];
+};
+
+// New types for activity interactions
+export type ActivityVote = {
+  id: string;
+  user_id: string;
+  activity_id: string;
+  vote_type: 'upvote' | 'downvote';
+  created_at: string;
+};
+
+export type ActivityComment = {
+  id: string;
+  user_id: string;
+  activity_id: string;
+  comment: string;
+  created_at: string;
+  user_name?: string;
+};
+
+export type SharedUser = {
+  id: string;
+  user_id: string;
+  itinerary_id: string;
+  user_email: string;
+  permission: 'view' | 'edit';
+  created_at: string;
 };
 
 export type TripDay = {
@@ -115,4 +144,6 @@ export type TripItinerary = {
   warnings: TripWarning[];
   totalCost: number;
   currency: string;
+  user_id?: string;
+  shared_users?: SharedUser[];
 };

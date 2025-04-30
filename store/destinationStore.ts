@@ -175,7 +175,9 @@ export const useDestinationStore = create<DestinationState>((set, get) => ({
       const { data, error } = await supabase
         .from('global_destination')
         .select('*')
-        .or(`title.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+        .or(
+          `title.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`
+        );
 
       if (error) throw error;
 
@@ -184,12 +186,9 @@ export const useDestinationStore = create<DestinationState>((set, get) => ({
         searchQuery: query,
         isSearching: false,
       });
-
     } catch (error) {
       set({
-        error: error instanceof Error
-          ? error.message
-          : 'Search failed',
+        error: error instanceof Error ? error.message : 'Search failed',
         isSearching: false,
       });
     }
@@ -201,5 +200,5 @@ export const useDestinationStore = create<DestinationState>((set, get) => ({
       searchResults: [],
       isSearching: false,
     });
-  }
+  },
 }));

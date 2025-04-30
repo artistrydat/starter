@@ -9,6 +9,17 @@ import { TripItinerary } from '@/src/types/destinations';
 export const TripItineraryTabs = ({ itinerary }: { itinerary: TripItinerary }) => {
   const [activeDay, setActiveDay] = useState(`day1`);
 
+  // Add safety check for undefined itinerary
+  if (!itinerary || !itinerary.days || itinerary.days.length === 0) {
+    return (
+      <View className="flex-1 items-center justify-center p-4">
+        <AppText size="lg" color="text" align="center">
+          No itinerary days available.
+        </AppText>
+      </View>
+    );
+  }
+
   // Generate day tab items
   const dayTabs = itinerary.days.map((day) => ({
     id: `day${day.day}`,
