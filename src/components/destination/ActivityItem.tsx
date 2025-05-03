@@ -4,28 +4,45 @@ import { View, Image, Alert, Pressable } from 'react-native';
 
 import { AppText } from '@/src/components/ui';
 import { TripActivity } from '@/src/types/destinations';
-import { useItineraryStore } from '@/store/itineraryStore';
+import { useActivityStore } from '@/store/itinerary';
 
 type ActivityItemProps = {
   activity: TripActivity;
   dayId: string;
   editable?: boolean;
+  useMockInteractions?: boolean;
 };
 
-export const ActivityItem = ({ activity, dayId, editable = true }: ActivityItemProps) => {
-  const { deleteActivity, voteActivity, removeVote, addComment } = useItineraryStore();
+export const ActivityItem = ({
+  activity,
+  dayId,
+  editable = true,
+  useMockInteractions = true,
+}: ActivityItemProps) => {
+  const { deleteActivity } = useActivityStore();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isVoting, setIsVoting] = useState(false);
 
+  // Local state for mock interactions
+  const [mockUpvotes, setMockUpvotes] = useState(0);
+  const [mockDownvotes, setMockDownvotes] = useState(0);
+  const [mockUserVote, setMockUserVote] = useState<'upvote' | 'downvote' | null>(null);
+
   // Calculate vote counts
-  const upvotes = activity.votes?.filter((v) => v.vote_type === 'upvote').length || 0;
-  const downvotes = activity.votes?.filter((v) => v.vote_type === 'downvote').length || 0;
-  const score = upvotes - downvotes;
+  const upvotes = useMockInteractions
+    ? mockUpvotes
+    : activity.votes?.filter((v) => v.vote_type === 'upvote').length || 0;
+  const downvotes = useMockInteractions
+    ? mockDownvotes
+    : activity.votes?.filter((v) => v.vote_type === 'downvote').length || 0;
 
   // Check if current user has voted
   const hasUserVoted = (voteType: 'upvote' | 'downvote'): boolean => {
+    if (useMockInteractions) {
+      return mockUserVote === voteType;
+    }
+
     // In a real app, you'd check against the current user ID
-    // Since we don't have that available, we'll just return false for now
     return false;
   };
 
@@ -41,6 +58,11 @@ export const ActivityItem = ({ activity, dayId, editable = true }: ActivityItemP
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
+            if (useMockInteractions) {
+              Alert.alert('Mock Delete', 'In a real app, this activity would be deleted.');
+              return;
+            }
+
             setIsDeleting(true);
             try {
               const success = await deleteActivity(dayId, activity.id);
@@ -64,16 +86,39 @@ export const ActivityItem = ({ activity, dayId, editable = true }: ActivityItemP
   const handleVote = async (voteType: 'upvote' | 'downvote') => {
     if (isVoting) return;
 
+    if (useMockInteractions) {
+      // Handle mock voting
+      if (mockUserVote === voteType) {
+        // Remove vote
+        setMockUserVote(null);
+        if (voteType === 'upvote') {
+          setMockUpvotes((prev) => Math.max(0, prev - 1));
+        } else {
+          setMockDownvotes((prev) => Math.max(0, prev - 1));
+        }
+      } else {
+        // Add/change vote
+        if (mockUserVote === 'upvote' && voteType === 'downvote') {
+          setMockUpvotes((prev) => Math.max(0, prev - 1));
+          setMockDownvotes((prev) => prev + 1);
+        } else if (mockUserVote === 'downvote' && voteType === 'upvote') {
+          setMockDownvotes((prev) => Math.max(0, prev - 1));
+          setMockUpvotes((prev) => prev + 1);
+        } else if (voteType === 'upvote') {
+          setMockUpvotes((prev) => prev + 1);
+        } else {
+          setMockDownvotes((prev) => prev + 1);
+        }
+        setMockUserVote(voteType);
+      }
+      return;
+    }
+
     setIsVoting(true);
     try {
-      const userHasVoted = hasUserVoted(voteType);
-      let success;
-
-      if (userHasVoted) {
-        success = await removeVote(activity.id);
-      } else {
-        success = await voteActivity(activity.id, voteType);
-      }
+      // In a real app, you would call an API to vote on the activity
+      // const success = await voteActivity(activity.id, voteType);
+      const success = false;
 
       if (!success) {
         Alert.alert('Error', 'Failed to register your vote. Please try again.');
@@ -94,17 +139,10 @@ export const ActivityItem = ({ activity, dayId, editable = true }: ActivityItemP
     );
   };
 
-  const handleShareActivity = () => {
-    Alert.alert(
-      'Invite Users',
-      'This would open a modal to invite users to collaborate on this itinerary.'
-    );
-  };
-
   return (
     <View className="mb-4 overflow-hidden rounded-xl bg-tertiary shadow-sm">
-      {activity.imageUrl && (
-        <Image source={{ uri: activity.imageUrl }} className="h-40 w-full" resizeMode="cover" />
+      {activity.image_url && (
+        <Image source={{ uri: activity.image_url }} className="h-40 w-full" resizeMode="cover" />
       )}
       <View className="p-4">
         <View className="mb-2 flex-row items-center justify-between">
@@ -117,20 +155,20 @@ export const ActivityItem = ({ activity, dayId, editable = true }: ActivityItemP
         </View>
 
         <AppText size="sm" color="text" className="mb-2">
-          {activity.description}
+          {activity.description || 'No description available'}
         </AppText>
 
         <View className="mt-2 flex-row items-center justify-between">
           <View className="flex-row items-center">
             <MaterialCommunityIcons name="map-marker" size={18} color="#78B0A8" />
             <AppText size="xs" color="text" className="ml-1">
-              {activity.location}
+              {activity.location || 'Location not specified'}
             </AppText>
           </View>
 
           <View className="rounded-full bg-secondary px-3 py-1">
             <AppText size="xs" weight="bold" color="text">
-              {activity.cost === 0 ? 'Free' : `${activity.cost} ${activity.currency || 'JPY'}`}
+              {activity.cost === 0 ? 'Free' : `${activity.cost} ${activity.currency}`}
             </AppText>
           </View>
         </View>
@@ -193,10 +231,6 @@ export const ActivityItem = ({ activity, dayId, editable = true }: ActivityItemP
                 <MaterialCommunityIcons name="trash-can-outline" size={18} color="#FF6B6B" />
               </Pressable>
             )}
-
-            <Pressable onPress={handleShareActivity} hitSlop={10}>
-              <MaterialCommunityIcons name="share-variant-outline" size={18} color="#78B0A8" />
-            </Pressable>
           </View>
         </View>
       </View>

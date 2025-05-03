@@ -1,149 +1,200 @@
-export type Coordinates = {
+// Defining enums for fixed sets of values
+export enum PriceLevel {
+  Budget = 'budget',
+  Moderate = 'moderate',
+  Luxury = 'luxury',
+}
+
+export enum VoteType {
+  Upvote = 'upvote',
+  Downvote = 'downvote',
+}
+
+export enum PermissionType {
+  View = 'view',
+  Edit = 'edit',
+}
+
+export enum WarningSeverity {
+  Low = 'low',
+  Medium = 'medium',
+  High = 'high',
+}
+
+export interface Coordinates {
   lat: number;
   lng: number;
-};
+}
 
-export type Destination = {
+export interface GlobalDestination {
   id: string;
   title: string;
   location: string;
   image_url: string;
-  tags: string[];
+  tags: string[] | null;
   rating?: number;
-  price_level?: 'budget' | 'moderate' | 'luxury';
+  price_level?: PriceLevel;
   description?: string;
   coordinates?: Coordinates;
   is_featured?: boolean;
   category?: string;
-  created_at?: string;
-  updated_at?: string;
-};
+  created_at: string; // Consider using Date if working with actual Date objects
+  updated_at: string; // Consider using Date if working with actual Date objects
+}
 
-export type UserFavorite = {
+export interface UserFavorite {
   id: string;
   user_id: string;
   destination_id: string;
-  created_at: string;
-};
+  created_at: string; // Consider using Date
+}
 
-export type DestinationCategory = {
+export interface DestinationCategory {
   id: string;
   label: string;
-};
+}
 
-export type TripActivity = {
-  id: string;
-  name: string;
-  time: string;
-  description: string;
-  location: string;
-  imageUrl?: string;
-  cost: number;
-  currency?: string;
-  category: 'sightseeing' | 'food' | 'transport' | 'accommodation' | 'other';
-  icon?: string;
-  votes?: ActivityVote[];
-  comments?: ActivityComment[];
-};
-
-// New types for activity interactions
-export type ActivityVote = {
-  id: string;
-  user_id: string;
-  activity_id: string;
-  vote_type: 'upvote' | 'downvote';
-  created_at: string;
-};
-
-export type ActivityComment = {
+export interface ActivityComment {
   id: string;
   user_id: string;
   activity_id: string;
   comment: string;
-  created_at: string;
+  created_at: string; // Consider using Date
   user_name?: string;
-};
+}
 
-export type SharedUser = {
+export interface ActivityVote {
+  id: string;
+  user_id: string;
+  activity_id: string;
+  vote_type: VoteType;
+  created_at: string; // Consider using Date
+}
+
+export interface TripActivity {
+  id: string;
+  day_id: string;
+  name: string;
+  time: string;
+  description?: string;
+  location?: string;
+  image_url?: string;
+  cost: number;
+  currency: string;
+  category: string;
+  icon?: string;
+  votes?: ActivityVote[];
+  comments?: ActivityComment[];
+  created_at: string; // Consider using Date
+}
+
+export interface SharedUser {
   id: string;
   user_id: string;
   itinerary_id: string;
   user_email: string;
-  permission: 'view' | 'edit';
-  created_at: string;
-};
+  permission: PermissionType;
+  created_at: string; // Consider using Date
+  created_by?: string;
+  user_name?: string;
+}
 
-export type TripDay = {
+export interface TripDay {
   id: string;
-  day: number;
-  date: string;
+  itinerary_id: string;
+  day_number: number;
+  date: string; // Consider using Date
   activities: TripActivity[];
-};
+  created_at: string; // Consider using Date
+}
 
-export type TripWeather = {
-  day: number;
-  date: string;
-  condition: 'sunny' | 'cloudy' | 'rainy' | 'stormy' | 'snowy';
-  highTemp: number;
-  lowTemp: number;
-  icon: string;
-};
-
-export type WeatherOverview = {
-  description: string;
-  recommendations: {
-    id: string;
-    text: string;
-    icon: string;
-  }[];
-};
-
-export type TripHighlight = {
+export interface TripWeather {
   id: string;
+  itinerary_id: string;
+  day: number;
+  date: string; // Consider using Date
+  condition: string;
+  high_temp: number;
+  low_temp: number;
+  icon: string;
+  created_at: string; // Consider using Date
+}
+
+export interface WeatherRecommendation {
+  id: string;
+  weather_overview_id: string;
+  text: string;
+  icon: string;
+  created_at: string; // Consider using Date
+}
+
+export interface WeatherOverview {
+  id: string;
+  itinerary_id: string;
+  description: string;
+  recommendations: WeatherRecommendation[];
+  created_at: string; // Consider using Date
+}
+
+export interface TripHighlight {
+  id: string;
+  itinerary_id: string;
   title: string;
   description?: string;
   icon: string;
-};
+  created_at: string; // Consider using Date
+}
 
-export type TripTip = {
+export interface TripTip {
   id: string;
+  itinerary_id: string;
   title: string;
-  description: string;
-  icon: string;
-  category: 'cultural' | 'practical' | 'safety' | 'transport' | 'other';
-};
+  description?: string;
+  icon?: string;
+  category?: string;
+  created_at: string; // Consider using Date
+}
 
-export type PackingItem = {
+export interface PackingItem {
   id: string;
+  itinerary_id: string;
   name: string;
-  icon: string;
+  category: string;
   essential: boolean;
-  category: 'clothing' | 'electronics' | 'toiletries' | 'documents' | 'other';
-};
+  icon?: string;
+  created_at: string; // Consider using Date
+}
 
-export type TripWarning = {
+export interface TripWarning {
   id: string;
+  itinerary_id: string;
   title: string;
   description: string;
-  severity: 'low' | 'medium' | 'high';
-  icon: string;
-};
+  severity: WarningSeverity;
+  icon?: string;
+  created_at: string; // Consider using Date
+}
 
-export type TripItinerary = {
+export interface TripItinerary {
   id: string;
   title: string;
   destination: string;
-  description: string;
-  imageUrl: string;
+  description?: string;
+  image_url?: string;
+  total_cost: number;
+  currency: string;
+  user_id: string;
   days: TripDay[];
   weather: TripWeather[];
-  weather_overview: WeatherOverview;
+  weather_overview?: WeatherOverview | null;
   trip_highlights: TripHighlight[];
   general_tips: TripTip[];
   packing_recommendation: PackingItem[];
   warnings: TripWarning[];
-  totalCost: number;
-  currency: string;
-  user_id?: string;
-  shared_users?: SharedUser[];
-};
+  shared_users: SharedUser[];
+  created_at: string; // Consider using Date
+  updated_at: string; // Consider using Date
+  destination_details?: GlobalDestination;
+  start_date?: string; // Consider using Date
+  end_date?: string; // Consider using Date
+}

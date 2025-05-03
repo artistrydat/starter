@@ -1,10 +1,22 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { View } from 'react-native';
 
-import PackingRecommendation from './PackingRecommendation';
-
 import { AppText } from '@/src/components/ui';
 import { PackingItem, TripTip, TripWarning } from '@/src/types/destinations';
+
+// Define a type for valid MaterialCommunityIcons names
+type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+
+// Helper function to ensure icon names are valid
+const getValidIconName = (iconName?: string): IconName => {
+  // Provide fallback icons based on your app's design
+  const fallbackIcon: IconName = 'information-outline';
+
+  if (!iconName) return fallbackIcon;
+
+  // Return the icon name as a valid IconName type
+  return iconName as IconName;
+};
 
 export const WarningsInfo = ({
   warnings,
@@ -41,7 +53,7 @@ export const WarningsInfo = ({
           {warnings.map((warning) => (
             <View key={warning.id} className="mb-2 flex-row items-start">
               <MaterialCommunityIcons
-                name={warning.icon || 'alert-circle'}
+                name={getValidIconName(warning.icon) || 'alert-circle'}
                 size={18}
                 color={
                   warning.severity === 'high'
@@ -76,7 +88,7 @@ export const WarningsInfo = ({
                 key={item.id}
                 className="mb-3 mr-3 flex-row items-center rounded-full bg-tertiary px-4 py-2">
                 <MaterialCommunityIcons
-                  name={item.icon || 'bag-personal'}
+                  name={getValidIconName(item.icon) || 'bag-personal'}
                   size={16}
                   color="#78B0A8"
                 />
@@ -105,7 +117,11 @@ export const WarningsInfo = ({
           </AppText>
           {generalTips.map((tip) => (
             <View key={tip.id} className="mb-2 flex-row items-center">
-              <MaterialCommunityIcons name={tip.icon || 'information'} size={18} color="#78B0A8" />
+              <MaterialCommunityIcons
+                name={getValidIconName(tip.icon || 'information')}
+                size={18}
+                color="#78B0A8"
+              />
               <View className="ml-2 flex-1">
                 <AppText size="sm" weight="medium" color="text">
                   {tip.title}

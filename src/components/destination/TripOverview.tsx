@@ -1,12 +1,22 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { View, Image } from 'react-native';
+import { Image, View } from 'react-native';
 
 import { AppText } from '@/src/components/ui';
 import { TripItinerary } from '@/src/types/destinations';
+import { mockItinerary } from '@/src/utils/mockItinerary';
 
-export const TripOverview = ({ itinerary }: { itinerary: TripItinerary }) => {
+export const TripOverview = ({
+  itinerary,
+  useMockData = true,
+}: {
+  itinerary: TripItinerary;
+  useMockData?: boolean;
+}) => {
+  // Use mock data if specified, or if real data is unavailable
+  const data = useMockData ? mockItinerary : itinerary;
+
   // Add safety checks to handle potential undefined values
-  if (!itinerary) {
+  if (!data) {
     return (
       <View className="flex-1 items-center justify-center p-4">
         <AppText size="lg" color="text" align="center">
@@ -16,15 +26,27 @@ export const TripOverview = ({ itinerary }: { itinerary: TripItinerary }) => {
     );
   }
 
+  // Format date range for display
+  const getDateRange = () => {
+    if (data.start_date && data.end_date) {
+      // If we have explicit start/end dates
+      return `${new Date(data.start_date).toLocaleDateString()} - ${new Date(data.end_date).toLocaleDateString()}`;
+    } else if (data.days && data.days.length > 0) {
+      // Otherwise try to get it from the days array
+      return `${data.days[0].date} - ${data.days[data.days.length - 1].date}`;
+    }
+    return 'No dates available';
+  };
+
   return (
     <View className="flex-1">
       <View className="mb-4 overflow-hidden rounded-xl bg-quinary shadow-sm">
-        {itinerary.imageUrl && (
-          <Image source={{ uri: itinerary.imageUrl }} className="h-48 w-full" resizeMode="cover" />
+        {data.image_url && (
+          <Image source={{ uri: data.image_url }} className="h-48 w-full" resizeMode="cover" />
         )}
         <View className="p-4">
           <AppText size="base" color="text">
-            {itinerary.description || 'No description available'}
+            {data.description || 'No description available'}
           </AppText>
         </View>
       </View>
@@ -38,17 +60,11 @@ export const TripOverview = ({ itinerary }: { itinerary: TripItinerary }) => {
             </AppText>
           </View>
           <AppText size="sm" color="text">
-            {itinerary.days?.length || 0} Days
+            {data.days?.length || 0} Days
           </AppText>
-          {itinerary.days && itinerary.days.length > 0 ? (
-            <AppText size="xs" color="text">
-              {itinerary.days[0].date} - {itinerary.days[itinerary.days.length - 1].date}
-            </AppText>
-          ) : (
-            <AppText size="xs" color="text">
-              No dates available
-            </AppText>
-          )}
+          <AppText size="xs" color="text">
+            {getDateRange()}
+          </AppText>
         </View>
 
         <View className="ml-2 flex-1 rounded-xl bg-accent p-4 shadow-sm">
@@ -59,7 +75,7 @@ export const TripOverview = ({ itinerary }: { itinerary: TripItinerary }) => {
             </AppText>
           </View>
           <AppText size="sm" color="text">
-            {(itinerary.totalCost || 0).toLocaleString()} {itinerary.currency || 'JPY'}
+            {(data.total_cost || 0).toLocaleString()} {data.currency || 'EUR'}
           </AppText>
           <AppText size="xs" color="text">
             Activities and meals only
@@ -68,19 +84,18 @@ export const TripOverview = ({ itinerary }: { itinerary: TripItinerary }) => {
       </View>
 
       <View className="rounded-xl bg-tertiary p-4 shadow-sm">
-        <AppText size="base" weight="bold" color="primary" className="mb-2">
+        <AppText size="base" weight="bold" color="primary" className="mb-4">
           Trip Highlights
         </AppText>
 
-        {itinerary.trip_highlights && itinerary.trip_highlights.length > 0 ? (
-          itinerary.trip_highlights.map((highlight) => (
-            <View key={highlight.id} className="mb-2 flex-row items-start">
-              <MaterialCommunityIcons
-                name={highlight.icon}
-                size={18}
-                color="#78B0A8"
-                className="mt-1"
-              />
+        {data.trip_highlights && data.trip_highlights.length > 0 ? (
+          data.trip_highlights.map((highlight) => (
+            <View key={highlight.id} className="mb-4 flex-row items-start">
+              <View className="h-8 w-8 items-center justify-center rounded-full bg-gray-200">
+                <AppText size="lg" weight="medium" color="text">
+                  ?
+                </AppText>
+              </View>
               <View className="ml-2 flex-1">
                 <AppText size="sm" weight="medium" color="text">
                   {highlight.title}

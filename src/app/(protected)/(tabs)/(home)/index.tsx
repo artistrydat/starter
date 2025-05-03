@@ -31,6 +31,10 @@ export default function IndexScreen() {
         Index Screen
       </AppText>
 
+      <Link href="/destination-details" asChild>
+        <Button title="View Trip Details Demo" color="primary" size="lg" className="mb-4 mt-6" />
+      </Link>
+
       <Link href="/home-nested" push asChild>
         <Button title="Push to /home-nested" color="primary" size="lg" />
       </Link>

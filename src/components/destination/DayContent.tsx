@@ -7,23 +7,63 @@ import ActivityItem from './ActivityItem';
 import { AppText } from '@/src/components/ui';
 import { TripDay } from '@/src/types/destinations';
 
+// Define a type for the valid icon names we're using
+type MaterialCommunityIconName =
+  | 'weather-sunny'
+  | 'weather-partly-cloudy'
+  | 'weather-night'
+  | 'calendar-check'
+  | 'cash';
+
 export const DayContent = ({ day }: { day: TripDay }) => {
   // Calculate schedule coverage for timeline visualization
   const timelineMarkers = useMemo(() => {
     // Time markers for a full day (8am to 10pm)
     return [
-      { time: '08:00', label: 'Morning', icon: 'weather-sunny', color: '#5BBFB5' },
-      { time: '12:00', label: 'Noon', icon: 'weather-sunny', color: '#FFD166' },
-      { time: '16:00', label: 'Afternoon', icon: 'weather-partly-cloudy', color: '#06D6A0' },
-      { time: '20:00', label: 'Evening', icon: 'weather-night', color: '#118AB2' },
+      {
+        time: '08:00',
+        label: 'Morning',
+        icon: 'weather-sunny' as MaterialCommunityIconName,
+        color: '#5BBFB5',
+      },
+      {
+        time: '12:00',
+        label: 'Noon',
+        icon: 'weather-sunny' as MaterialCommunityIconName,
+        color: '#FFD166',
+      },
+      {
+        time: '16:00',
+        label: 'Afternoon',
+        icon: 'weather-partly-cloudy' as MaterialCommunityIconName,
+        color: '#06D6A0',
+      },
+      {
+        time: '20:00',
+        label: 'Evening',
+        icon: 'weather-night' as MaterialCommunityIconName,
+        color: '#118AB2',
+      },
     ];
   }, []);
+
+  // Format the date for display if available
+  const formattedDate = day.date
+    ? new Date(day.date).toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      })
+    : '';
+
+  // Calculate total cost of activities
+  const totalCost = day.activities.reduce((sum, act) => sum + (act.cost || 0), 0);
 
   return (
     <View className="flex-1">
       <View className="mb-6 rounded-xl bg-primary/10 p-4">
         <AppText size="xl" weight="bold" color="primary" className="mb-1">
-          Day {day.day} - {day.date}
+          Day {day.day_number} - {formattedDate}
         </AppText>
         <View className="flex-row items-center">
           <MaterialCommunityIcons name="calendar-check" size={16} color="#5BBFB5" />
@@ -32,7 +72,7 @@ export const DayContent = ({ day }: { day: TripDay }) => {
           </AppText>
           <MaterialCommunityIcons name="cash" size={16} color="#5BBFB5" className="ml-4" />
           <AppText size="sm" color="text" className="ml-1">
-            {day.activities.reduce((sum, act) => sum + act.cost, 0).toLocaleString()} JPY
+            {totalCost.toLocaleString()} {day.activities[0]?.currency || 'EUR'}
           </AppText>
         </View>
       </View>
@@ -83,9 +123,17 @@ export const DayContent = ({ day }: { day: TripDay }) => {
         Today's Itinerary
       </AppText>
 
-      {day.activities.map((activity) => (
-        <ActivityItem key={activity.id} activity={activity} dayId={day.id} />
-      ))}
+      {day.activities.length > 0 ? (
+        day.activities.map((activity) => (
+          <ActivityItem key={activity.id} activity={activity} dayId={day.id} />
+        ))
+      ) : (
+        <View className="items-center justify-center py-8">
+          <AppText size="sm" color="text" className="opacity-70">
+            No activities planned for this day.
+          </AppText>
+        </View>
+      )}
     </View>
   );
 };

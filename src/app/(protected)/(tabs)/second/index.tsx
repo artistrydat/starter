@@ -1,9 +1,9 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { View, FlatList, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 
-import { AppText, Button, FloatingActionButton, SearchBar, TravelCard } from '@/src/components/ui';
+import { AppText, Button, SearchBar, TravelCard } from '@/src/components/ui';
 import { DestinationCategory } from '@/src/types/destinations';
 import { useDestinationStore } from '@/store/destinationStore';
 

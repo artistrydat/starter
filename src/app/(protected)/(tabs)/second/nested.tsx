@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState, useEffect } from 'react';
-import { View, ScrollView, ActivityIndicator } from 'react-native';
+import { View, ScrollView, ActivityIndicator, TextInput, TouchableOpacity } from 'react-native';
 
 import {
   TripItineraryTabs,
@@ -9,18 +9,19 @@ import {
   WarningsInfo,
 } from '@/src/components/destination';
 import { AppText, Tabs, Button } from '@/src/components/ui';
-import { supabase } from '@/src/utils/supabaseClient';
-import { useItineraryStore } from '@/store/itineraryStore';
+import { PermissionType } from '@/src/types/destinations';
+import { useItineraryStore, useShareStore } from '@/store/itinerary';
 
 export default function SecondNestedScreen() {
   // State for active main section tab
   const [activeSection, setActiveSection] = useState('overview');
   const [inviteEmail, setInviteEmail] = useState('');
   const [isInviting, setIsInviting] = useState(false);
+  const [showShareForm, setShowShareForm] = useState(false);
 
   // Use itinerary store
-  const { currentItinerary, isLoading, error, fetchItinerary, shareItinerary } =
-    useItineraryStore();
+  const { currentItinerary, isLoading, error, fetchItinerary } = useItineraryStore();
+  const { shareItinerary } = useShareStore();
 
   // Fetch itinerary on mount - using a mock ID for now
   useEffect(() => {
@@ -28,10 +29,10 @@ export default function SecondNestedScreen() {
     const itineraryId = 'a7b9c0d1-e2f3-4a5b-8c9d-1e2f3a4b5c6d';
     console.log('Fetching itinerary with ID:', itineraryId);
     fetchItinerary(itineraryId)
-      .then((result) => {
+      .then((result: any) => {
         console.log('Itinerary fetch result:', result ? 'Success' : 'Failed');
       })
-      .catch((err) => {
+      .catch((err: Error) => {
         console.error('Error in itinerary fetch effect:', err);
       });
   }, [fetchItinerary]);
@@ -139,19 +140,15 @@ export default function SecondNestedScreen() {
   };
 
   // Handle sharing itinerary with other users
-  const handleShareItinerary = async (email: string, permission: 'view' | 'edit') => {
+  const handleShareItinerary = async (email: string, permission: PermissionType) => {
     if (!currentItinerary) return;
 
-    setIsInviting(true);
     try {
-      const result = await shareItinerary(currentItinerary.id, email, permission);
-      if (result) {
-        // Could show a success message
-      }
+      // Since shareItinerary returns void (Promise<void>), we don't need to check the result
+      await shareItinerary(currentItinerary.id, email, permission);
+      // Could show a success message here
     } catch (error) {
       console.error('Error sharing itinerary:', error);
-    } finally {
-      setIsInviting(false);
     }
   };
 
@@ -175,7 +172,51 @@ export default function SecondNestedScreen() {
         <AppText size="lg" weight="normal" color="primary" align="center" className="opacity-90">
           {currentItinerary?.destination || ''}
         </AppText>
+
+        {/* Share button */}
+        {currentItinerary && (
+          <TouchableOpacity
+            className="absolute right-4 top-4 p-2"
+            onPress={() => setShowShareForm(!showShareForm)}>
+            <MaterialCommunityIcons name="share-variant" size={24} color="#5BBFB5" />
+          </TouchableOpacity>
+        )}
       </View>
+
+      {/* Share Form */}
+      {showShareForm && currentItinerary && (
+        <View className="mx-4 my-2 rounded-lg bg-white p-4 shadow-sm">
+          <AppText size="sm" weight="medium" color="primary" className="mb-2">
+            Share Itinerary
+          </AppText>
+          <TextInput
+            className="mb-2 rounded-md border border-gray-300 p-2"
+            placeholder="Email address"
+            value={inviteEmail}
+            onChangeText={setInviteEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <View className="mt-2 flex-row justify-end">
+            <Button
+              title={isInviting ? 'Sharing...' : 'Share with View Access'}
+              color="secondary"
+              size="sm"
+              disabled={isInviting || !inviteEmail}
+              onPress={() => {
+                setIsInviting(true);
+                handleShareItinerary(inviteEmail, PermissionType.View)
+                  .then(() => {
+                    setInviteEmail('');
+                    setShowShareForm(false);
+                  })
+                  .finally(() => setIsInviting(false));
+              }}
+              className="mr-2"
+            />
+          </View>
+        </View>
+      )}
 
       {/* Main section tabs */}
       <View>

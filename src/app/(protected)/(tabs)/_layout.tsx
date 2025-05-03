@@ -37,14 +37,14 @@ export default function BottomTabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="fourth"
+        name="six"
         options={{
           tabBarBadge: 100,
           tabBarBadgeStyle: {
             backgroundColor: 'tomato',
             color: 'white',
           },
-          title: 'Fourth',
+          title: 'six',
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="numeric-4-box-outline" size={size} color={color} />
           ),

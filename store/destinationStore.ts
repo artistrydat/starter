@@ -1,35 +1,24 @@
 import { create } from 'zustand';
 
-import { Destination, UserFavorite } from '@/src/types/destinations';
+import { GlobalDestination } from '@/src/types/destinations';
 import { supabase } from '@/src/utils/supabaseClient';
 
 interface DestinationState {
-  // Destinations
-  destinations: Destination[];
+  destinations: GlobalDestination[];
   isLoading: boolean;
   error: string | null;
-
-  // Favorites
   favorites: string[];
-  isFavoritesLoading: boolean;
-
-  // Category and Search
   selectedCategory: string;
   searchQuery: string;
-  searchResults: Destination[];
+  searchResults: GlobalDestination[];
   isSearching: boolean;
 
-  // Actions
   fetchDestinations: (category?: string) => Promise<void>;
   fetchFavorites: () => Promise<void>;
-  addFavorite: (destinationId: string) => Promise<void>;
-  removeFavorite: (destinationId: string) => Promise<void>;
   toggleFavorite: (destinationId: string) => Promise<void>;
   setSelectedCategory: (category: string) => void;
-
-  // Search Actions
   setSearchQuery: (query: string) => void;
-  searchDestinations: (query: string) => Promise<void>;
+  searchDestinations: (query: string) => void;
   clearSearch: () => void;
 }
 
@@ -38,31 +27,30 @@ export const useDestinationStore = create<DestinationState>((set, get) => ({
   isLoading: false,
   error: null,
   favorites: [],
-  isFavoritesLoading: false,
   selectedCategory: 'all',
   searchQuery: '',
   searchResults: [],
   isSearching: false,
 
-  fetchDestinations: async (category?: string) => {
+  fetchDestinations: async (category = 'all') => {
     try {
       set({ isLoading: true, error: null });
 
-      let query = supabase.from('global_destination').select('*');
+      // Fetch destinations from Supabase
+      let query = supabase.from('destinations').select('*');
 
-      if (category && category !== 'all') {
+      // Apply category filter if not 'all'
+      if (category !== 'all') {
         query = query.eq('category', category);
       }
 
-      const { data, error } = await query.order('is_featured', { ascending: false });
+      const { data, error } = await query;
 
       if (error) throw error;
 
-      set({ destinations: data as Destination[] });
+      set({ destinations: data || [] });
     } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : 'Failed to fetch destinations',
-      });
+      set({ error: error instanceof Error ? error.message : 'Failed to fetch destinations' });
     } finally {
       set({ isLoading: false });
     }
@@ -70,12 +58,14 @@ export const useDestinationStore = create<DestinationState>((set, get) => ({
 
   fetchFavorites: async () => {
     try {
-      set({ isFavoritesLoading: true });
-
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      if (!session?.user) return;
+
+      if (!session?.user) {
+        set({ favorites: [] });
+        return;
+      }
 
       const { data, error } = await supabase
         .from('user_favorites')
@@ -84,68 +74,55 @@ export const useDestinationStore = create<DestinationState>((set, get) => ({
 
       if (error) throw error;
 
-      const favoriteIds = data.map((fav) => fav.destination_id);
-      set({ favorites: favoriteIds });
+      set({ favorites: data ? data.map((item) => item.destination_id) : [] });
     } catch (error) {
       console.error('Error fetching favorites:', error);
-    } finally {
-      set({ isFavoritesLoading: false });
-    }
-  },
-
-  addFavorite: async (destinationId: string) => {
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session?.user) {
-        throw new Error('You must be logged in to add favorites');
-      }
-
-      const { error } = await supabase.from('user_favorites').insert({
-        user_id: session.user.id,
-        destination_id: destinationId,
-      });
-
-      if (error) throw error;
-
-      set((state) => ({
-        favorites: [...state.favorites, destinationId],
-      }));
-    } catch (error) {
-      console.error('Error adding favorite:', error);
-    }
-  },
-
-  removeFavorite: async (destinationId: string) => {
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session?.user) return;
-
-      const { error } = await supabase
-        .from('user_favorites')
-        .delete()
-        .eq('user_id', session.user.id)
-        .eq('destination_id', destinationId);
-
-      if (error) throw error;
-
-      set((state) => ({
-        favorites: state.favorites.filter((id) => id !== destinationId),
-      }));
-    } catch (error) {
-      console.error('Error removing favorite:', error);
+      // We don't set an error state here since this is not a critical failure
     }
   },
 
   toggleFavorite: async (destinationId: string) => {
-    const isFavorite = get().favorites.includes(destinationId);
-    if (isFavorite) {
-      await get().removeFavorite(destinationId);
-    } else {
-      await get().addFavorite(destinationId);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.user) {
+        throw new Error('You must be logged in to favorite destinations');
+      }
+
+      const favorites = get().favorites;
+      const isFavorited = favorites.includes(destinationId);
+
+      // Optimistic update
+      set({
+        favorites: isFavorited
+          ? favorites.filter((id) => id !== destinationId)
+          : [...favorites, destinationId],
+      });
+
+      if (isFavorited) {
+        // Remove from favorites
+        const { error } = await supabase
+          .from('user_favorites')
+          .delete()
+          .eq('user_id', session.user.id)
+          .eq('destination_id', destinationId);
+
+        if (error) throw error;
+      } else {
+        // Add to favorites
+        const { error } = await supabase.from('user_favorites').insert({
+          user_id: session.user.id,
+          destination_id: destinationId,
+        });
+
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      // Revert optimistic update on error
+      await get().fetchFavorites();
     }
   },
 
@@ -154,44 +131,36 @@ export const useDestinationStore = create<DestinationState>((set, get) => ({
     get().fetchDestinations(category);
   },
 
-  // New search functions
   setSearchQuery: (query: string) => {
     set({ searchQuery: query });
+
+    // If query is empty, clear search
+    if (!query) {
+      get().clearSearch();
+    }
   },
 
-  searchDestinations: async (query: string) => {
-    try {
-      if (!query.trim()) {
-        set({ searchResults: [], searchQuery: '', isSearching: false });
-        return;
-      }
-
-      set({ isSearching: true, error: null });
-
-      // Convert query to lowercase for case-insensitive search
-      const searchTerm = query.trim().toLowerCase();
-
-      // Use Supabase text search capabilities
-      const { data, error } = await supabase
-        .from('global_destination')
-        .select('*')
-        .or(
-          `title.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`
-        );
-
-      if (error) throw error;
-
-      set({
-        searchResults: data as Destination[],
-        searchQuery: query,
-        isSearching: false,
-      });
-    } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : 'Search failed',
-        isSearching: false,
-      });
+  searchDestinations: (query: string) => {
+    if (!query.trim()) {
+      get().clearSearch();
+      return;
     }
+
+    set({ isSearching: true });
+
+    // Simple client-side search
+    const results = get().destinations.filter(
+      (dest) =>
+        dest.title.toLowerCase().includes(query.toLowerCase()) ||
+        dest.location.toLowerCase().includes(query.toLowerCase()) ||
+        dest.description?.toLowerCase().includes(query.toLowerCase()) ||
+        dest.tags?.some((tag) => tag.toLowerCase().includes(query.toLowerCase()))
+    );
+
+    set({
+      searchResults: results,
+      isSearching: false,
+    });
   },
 
   clearSearch: () => {
