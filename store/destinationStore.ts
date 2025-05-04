@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import { GlobalDestination } from '@/src/types/destinations';
+import { GlobalDestination, PriceLevel } from '@/src/types/destinations';
 import { supabase } from '@/src/utils/supabaseClient';
 
 interface DestinationState {
@@ -35,22 +35,61 @@ export const useDestinationStore = create<DestinationState>((set, get) => ({
   fetchDestinations: async (category = 'all') => {
     try {
       set({ isLoading: true, error: null });
+      console.log('Fetching itineraries from trip_itineraries table...');
 
-      // Fetch destinations from Supabase
-      let query = supabase.from('destinations').select('*');
+      // Fetch itineraries from Supabase using trip_itineraries table
+      let query = supabase.from('trip_itineraries').select(`
+          id,
+          title,
+          destination,
+          description,
+          image_url,
+          total_cost,
+          currency,
+          user_id,
+          created_at,
+          updated_at,
+          start_date,
+          end_date
+        `);
 
       // Apply category filter if not 'all'
       if (category !== 'all') {
-        query = query.eq('category', category);
+        // Adjust this based on what field you want to filter by
+        // Using destination field as fallback if there's no category field
+        query = query.ilike('destination', `%${category}%`);
       }
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching itineraries:', error);
+        throw error;
+      }
 
-      set({ destinations: data || [] });
+      console.log(`Fetched ${data?.length || 0} itineraries`);
+
+      // Transform trip_itineraries data to match GlobalDestination structure
+      const transformedData: GlobalDestination[] =
+        data?.map((item) => ({
+          id: item.id,
+          title: item.title,
+          location: item.destination,
+          description: item.description || '',
+          image_url: item.image_url || '', // Match the exact property name from GlobalDestination
+          rating: 0, // Default value as this may not exist in trip_itineraries
+          price_level: PriceLevel.Moderate, // Using enum value from the type definition
+          tags: [], // Default empty array as this may not exist in trip_itineraries
+          category: '', // Default empty string
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+        })) || [];
+
+      set({ destinations: transformedData });
     } catch (error) {
-      set({ error: error instanceof Error ? error.message : 'Failed to fetch destinations' });
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch itineraries';
+      console.error(errorMessage);
+      set({ error: errorMessage });
     } finally {
       set({ isLoading: false });
     }

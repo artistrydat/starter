@@ -106,12 +106,7 @@ export default function SecondNestedScreen() {
             </View>
           );
         }
-        return (
-          <WeatherInfo
-            weather={currentItinerary.weather}
-            weatherOverview={currentItinerary.weather_overview}
-          />
-        );
+        return <WeatherInfo itinerary={currentItinerary} />;
       case 'aware':
         // Make sure awareness data exists
         if (
@@ -127,13 +122,7 @@ export default function SecondNestedScreen() {
             </View>
           );
         }
-        return (
-          <WarningsInfo
-            warnings={currentItinerary.warnings}
-            packingItems={currentItinerary.packing_recommendation}
-            generalTips={currentItinerary.general_tips}
-          />
-        );
+        return <WarningsInfo itinerary={currentItinerary} />;
       default:
         return null;
     }
@@ -170,7 +159,7 @@ export default function SecondNestedScreen() {
           {currentItinerary?.title || 'Loading...'}
         </AppText>
         <AppText size="lg" weight="normal" color="primary" align="center" className="opacity-90">
-          {currentItinerary?.destination || ''}
+          {currentItinerary?.title || ''}
         </AppText>
 
         {/* Share button */}

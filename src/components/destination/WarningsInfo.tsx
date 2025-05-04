@@ -2,36 +2,29 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { View } from 'react-native';
 
 import { AppText } from '@/src/components/ui';
-import { PackingItem, TripTip, TripWarning } from '@/src/types/destinations';
+import { TripItinerary } from '@/src/types/destinations';
+import { mockItinerary } from '@/src/utils/mockItinerary';
 
-// Define a type for valid MaterialCommunityIcons names
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
-// Helper function to ensure icon names are valid
 const getValidIconName = (iconName?: string): IconName => {
-  // Provide fallback icons based on your app's design
   const fallbackIcon: IconName = 'information-outline';
-
-  if (!iconName) return fallbackIcon;
-
-  // Return the icon name as a valid IconName type
-  return iconName as IconName;
+  return iconName ? (iconName as IconName) : fallbackIcon;
 };
 
 export const WarningsInfo = ({
-  warnings,
-  packingItems,
-  generalTips,
+  itinerary,
+  useMockData = true,
 }: {
-  warnings: TripWarning[];
-  packingItems: PackingItem[];
-  generalTips: TripTip[];
+  itinerary: TripItinerary;
+  useMockData?: boolean;
 }) => {
-  // Add safety check for undefined data
+  const data = useMockData ? mockItinerary : itinerary;
+
   if (
-    (!warnings || warnings.length === 0) &&
-    (!packingItems || packingItems.length === 0) &&
-    (!generalTips || generalTips.length === 0)
+    data.warnings.length === 0 &&
+    data.packing_recommendation.length === 0 &&
+    data.general_tips.length === 0
   ) {
     return (
       <View className="flex-1 items-center justify-center p-4">
@@ -44,13 +37,12 @@ export const WarningsInfo = ({
 
   return (
     <View className="flex-1">
-      {/* Travel Warnings Section */}
-      {warnings && warnings.length > 0 && (
+      {data.warnings.length > 0 && (
         <View className="mb-6 rounded-xl bg-quinary p-4 shadow-sm">
           <AppText size="xl" weight="bold" color="primary" className="mb-4">
             Travel Advisories
           </AppText>
-          {warnings.map((warning) => (
+          {data.warnings.map((warning) => (
             <View key={warning.id} className="mb-2 flex-row items-start">
               <MaterialCommunityIcons
                 name={getValidIconName(warning.icon) || 'alert-circle'}
@@ -76,14 +68,13 @@ export const WarningsInfo = ({
         </View>
       )}
 
-      {/* Packing List Section */}
-      {packingItems && packingItems.length > 0 && (
+      {data.packing_recommendation.length > 0 && (
         <View className="mb-6 rounded-xl bg-quinary p-4 shadow-sm">
           <AppText size="xl" weight="bold" color="primary" className="mb-4">
             Packing List
           </AppText>
           <View className="flex-row flex-wrap">
-            {packingItems.map((item) => (
+            {data.packing_recommendation.map((item) => (
               <View
                 key={item.id}
                 className="mb-3 mr-3 flex-row items-center rounded-full bg-tertiary px-4 py-2">
@@ -109,16 +100,15 @@ export const WarningsInfo = ({
         </View>
       )}
 
-      {/* General Tips Section */}
-      {generalTips && generalTips.length > 0 && (
+      {data.general_tips.length > 0 && (
         <View className="rounded-xl bg-quinary p-4 shadow-sm">
           <AppText size="xl" weight="bold" color="primary" className="mb-4">
             General Tips
           </AppText>
-          {generalTips.map((tip) => (
+          {data.general_tips.map((tip) => (
             <View key={tip.id} className="mb-2 flex-row items-center">
               <MaterialCommunityIcons
-                name={getValidIconName(tip.icon || 'information')}
+                name={getValidIconName(tip.icon) || 'information'}
                 size={18}
                 color="#78B0A8"
               />

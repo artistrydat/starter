@@ -1,4 +1,4 @@
-// Defining enums for fixed sets of values
+// Enums for fixed value sets
 export enum PriceLevel {
   Budget = 'budget',
   Moderate = 'moderate',
@@ -21,6 +21,7 @@ export enum WarningSeverity {
   High = 'high',
 }
 
+// Core interfaces matching tables
 export interface Coordinates {
   lat: number;
   lng: number;
@@ -31,22 +32,22 @@ export interface GlobalDestination {
   title: string;
   location: string;
   image_url: string;
-  tags: string[] | null;
+  tags?: string[] | null;
   rating?: number;
   price_level?: PriceLevel;
   description?: string;
   coordinates?: Coordinates;
   is_featured?: boolean;
   category?: string;
-  created_at: string; // Consider using Date if working with actual Date objects
-  updated_at: string; // Consider using Date if working with actual Date objects
+  created_at: string;
+  updated_at: string;
 }
 
 export interface UserFavorite {
   id: string;
   user_id: string;
   destination_id: string;
-  created_at: string; // Consider using Date
+  created_at?: string;
 }
 
 export interface DestinationCategory {
@@ -58,9 +59,10 @@ export interface ActivityComment {
   id: string;
   user_id: string;
   activity_id: string;
-  comment: string;
-  created_at: string; // Consider using Date
+  text: string;
   user_name?: string;
+  user_avatar?: string;
+  created_at?: string;
 }
 
 export interface ActivityVote {
@@ -68,7 +70,7 @@ export interface ActivityVote {
   user_id: string;
   activity_id: string;
   vote_type: VoteType;
-  created_at: string; // Consider using Date
+  created_at?: string;
 }
 
 export interface TripActivity {
@@ -84,8 +86,8 @@ export interface TripActivity {
   category: string;
   icon?: string;
   votes?: ActivityVote[];
-  comments?: ActivityComment[];
-  created_at: string; // Consider using Date
+  ActivityComment?: ActivityComment[];
+  created_at?: string;
 }
 
 export interface SharedUser {
@@ -94,7 +96,7 @@ export interface SharedUser {
   itinerary_id: string;
   user_email: string;
   permission: PermissionType;
-  created_at: string; // Consider using Date
+  created_at?: string;
   created_by?: string;
   user_name?: string;
 }
@@ -103,29 +105,29 @@ export interface TripDay {
   id: string;
   itinerary_id: string;
   day_number: number;
-  date: string; // Consider using Date
+  date: string;
   activities: TripActivity[];
-  created_at: string; // Consider using Date
+  created_at?: string;
 }
 
 export interface TripWeather {
   id: string;
   itinerary_id: string;
   day: number;
-  date: string; // Consider using Date
+  date: string;
   condition: string;
   high_temp: number;
   low_temp: number;
   icon: string;
-  created_at: string; // Consider using Date
+  created_at?: string;
 }
 
 export interface WeatherRecommendation {
   id: string;
   weather_overview_id: string;
   text: string;
-  icon: string;
-  created_at: string; // Consider using Date
+  icon?: string;
+  created_at?: string;
 }
 
 export interface WeatherOverview {
@@ -133,7 +135,7 @@ export interface WeatherOverview {
   itinerary_id: string;
   description: string;
   recommendations: WeatherRecommendation[];
-  created_at: string; // Consider using Date
+  created_at?: string;
 }
 
 export interface TripHighlight {
@@ -142,17 +144,7 @@ export interface TripHighlight {
   title: string;
   description?: string;
   icon: string;
-  created_at: string; // Consider using Date
-}
-
-export interface TripTip {
-  id: string;
-  itinerary_id: string;
-  title: string;
-  description?: string;
-  icon?: string;
-  category?: string;
-  created_at: string; // Consider using Date
+  created_at?: string;
 }
 
 export interface PackingItem {
@@ -162,7 +154,7 @@ export interface PackingItem {
   category: string;
   essential: boolean;
   icon?: string;
-  created_at: string; // Consider using Date
+  created_at: string;
 }
 
 export interface TripWarning {
@@ -172,29 +164,49 @@ export interface TripWarning {
   description: string;
   severity: WarningSeverity;
   icon?: string;
-  created_at: string; // Consider using Date
+  created_at?: string;
+}
+export interface TripTip {
+  id: string;
+  itinerary_id: string;
+  title: string;
+  description?: string;
+  icon?: string;
+  category?: string;
+  created_at: string;
 }
 
 export interface TripItinerary {
   id: string;
   title: string;
-  destination: string;
   description?: string;
   image_url?: string;
   total_cost: number;
   currency: string;
   user_id: string;
+  location: string;
+  tags: string[];
+  city: string;
+  rating?: number;
+  price_level?: PriceLevel;
+  coordinates?: Coordinates;
+  is_featured?: boolean;
+  category?: string;
+  is_bookmarked?: boolean;
+  is_shared?: boolean;
+  is_public?: boolean;
+  is_private?: boolean;
+  is_completed?: boolean;
   days: TripDay[];
   weather: TripWeather[];
-  weather_overview?: WeatherOverview | null;
+  weather_overview?: WeatherOverview;
   trip_highlights: TripHighlight[];
-  general_tips: TripTip[];
   packing_recommendation: PackingItem[];
   warnings: TripWarning[];
   shared_users: SharedUser[];
-  created_at: string; // Consider using Date
-  updated_at: string; // Consider using Date
-  destination_details?: GlobalDestination;
-  start_date?: string; // Consider using Date
-  end_date?: string; // Consider using Date
+  general_tips: TripTip[];
+  created_at: string;
+  updated_at: string;
+  start_date?: string;
+  end_date?: string;
 }
