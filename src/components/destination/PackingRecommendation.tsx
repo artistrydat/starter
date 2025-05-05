@@ -4,10 +4,19 @@ import { View } from 'react-native';
 import { AppText } from '@/src/components/ui';
 import { PackingItem } from '@/src/types/destinations';
 
+/**
+ * PackingRecommendation component - Pure UI component for displaying packing recommendations
+ * No data fetching or source-specific logic included
+ */
+
 // Define allowed icon names type - this matches what MaterialCommunityIcons expects
 type MaterialCommunityIconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
-export const PackingRecommendation = ({ packingItems }: { packingItems: PackingItem[] }) => {
+export type PackingRecommendationProps = {
+  packingItems: PackingItem[];
+};
+
+export const PackingRecommendation = ({ packingItems }: PackingRecommendationProps) => {
   // Add safety check for empty or undefined packing items
   if (!packingItems || packingItems.length === 0) {
     return (

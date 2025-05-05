@@ -7,6 +7,11 @@ import ActivityItem from './ActivityItem';
 import { AppText } from '@/src/components/ui';
 import { TripDay } from '@/src/types/destinations';
 
+/**
+ * DayContent component - Pure UI component for displaying day itinerary information
+ * No data fetching or source-specific logic included
+ */
+
 // Define a type for the valid icon names we're using
 type MaterialCommunityIconName =
   | 'weather-sunny'
@@ -15,7 +20,11 @@ type MaterialCommunityIconName =
   | 'calendar-check'
   | 'cash';
 
-export const DayContent = ({ day }: { day: TripDay }) => {
+export type DayContentProps = {
+  day: TripDay;
+};
+
+export const DayContent = ({ day }: DayContentProps) => {
   // Calculate schedule coverage for timeline visualization
   const timelineMarkers = useMemo(() => {
     // Time markers for a full day (8am to 10pm)
@@ -125,7 +134,7 @@ export const DayContent = ({ day }: { day: TripDay }) => {
 
       {day.activities.length > 0 ? (
         day.activities.map((activity) => (
-          <ActivityItem key={activity.id} activity={activity} dayId={day.id} />
+          <ActivityItem key={activity.id} activity={activity} dayId={day.id} editable={false} />
         ))
       ) : (
         <View className="items-center justify-center py-8">

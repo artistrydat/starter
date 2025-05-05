@@ -4,46 +4,51 @@ import { View, Image, Alert, Pressable } from 'react-native';
 
 import { AppText } from '@/src/components/ui';
 import { TripActivity } from '@/src/types/destinations';
-import { useActivityStore } from '@/store/itinerary';
 
-type ActivityItemProps = {
+/**
+ * ActivityItem component - Pure UI component for displaying travel activity information
+ * No data fetching or source-specific logic included
+ */
+export type ActivityItemProps = {
   activity: TripActivity;
   dayId: string;
   editable?: boolean;
-  useMockInteractions?: boolean;
+  upvotes?: number;
+  downvotes?: number;
+  userVote?: 'upvote' | 'downvote' | null;
+  onDelete?: (dayId: string, activityId: string) => void;
+  onVote?: (activityId: string, voteType: 'upvote' | 'downvote') => void;
+  onComment?: (activityId: string) => void;
 };
 
 export const ActivityItem = ({
   activity,
   dayId,
   editable = true,
-  useMockInteractions = true,
+  upvotes = 0,
+  downvotes = 0,
+  userVote = null,
+  onDelete,
+  onVote,
+  onComment,
 }: ActivityItemProps) => {
-  const { deleteActivity } = useActivityStore();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isVoting, setIsVoting] = useState(false);
 
-  // Local state for mock interactions
-  const [mockUpvotes, setMockUpvotes] = useState(0);
-  const [mockDownvotes, setMockDownvotes] = useState(0);
-  const [mockUserVote, setMockUserVote] = useState<'upvote' | 'downvote' | null>(null);
+  // Calculate vote counts - use props if provided, otherwise calculate from activity
+  const activityUpvotes =
+    upvotes !== undefined
+      ? upvotes
+      : activity.votes?.filter((v) => v.vote_type === 'upvote').length || 0;
 
-  // Calculate vote counts
-  const upvotes = useMockInteractions
-    ? mockUpvotes
-    : activity.votes?.filter((v) => v.vote_type === 'upvote').length || 0;
-  const downvotes = useMockInteractions
-    ? mockDownvotes
-    : activity.votes?.filter((v) => v.vote_type === 'downvote').length || 0;
+  const activityDownvotes =
+    downvotes !== undefined
+      ? downvotes
+      : activity.votes?.filter((v) => v.vote_type === 'downvote').length || 0;
 
   // Check if current user has voted
   const hasUserVoted = (voteType: 'upvote' | 'downvote'): boolean => {
-    if (useMockInteractions) {
-      return mockUserVote === voteType;
-    }
-
-    // In a real app, you'd check against the current user ID
-    return false;
+    return userVote === voteType;
   };
 
   const handleDeleteActivity = async () => {
@@ -58,22 +63,16 @@ export const ActivityItem = ({
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            if (useMockInteractions) {
-              Alert.alert('Mock Delete', 'In a real app, this activity would be deleted.');
-              return;
-            }
-
             setIsDeleting(true);
             try {
-              const success = await deleteActivity(dayId, activity.id);
-              if (success) {
-                // Activity deleted
+              if (onDelete) {
+                onDelete(dayId, activity.id);
               } else {
-                Alert.alert('Error', 'Failed to delete the activity. Please try again.');
+                // If no handler is provided, just show a mock alert
+                Alert.alert('Action', 'This would delete the activity in a real app');
               }
             } catch (error) {
-              console.error('Error deleting activity:', error);
-              Alert.alert('Error', 'An unexpected error occurred.');
+              console.error('Error handling delete:', error);
             } finally {
               setIsDeleting(false);
             }
@@ -86,58 +85,32 @@ export const ActivityItem = ({
   const handleVote = async (voteType: 'upvote' | 'downvote') => {
     if (isVoting) return;
 
-    if (useMockInteractions) {
-      // Handle mock voting
-      if (mockUserVote === voteType) {
-        // Remove vote
-        setMockUserVote(null);
-        if (voteType === 'upvote') {
-          setMockUpvotes((prev) => Math.max(0, prev - 1));
-        } else {
-          setMockDownvotes((prev) => Math.max(0, prev - 1));
-        }
-      } else {
-        // Add/change vote
-        if (mockUserVote === 'upvote' && voteType === 'downvote') {
-          setMockUpvotes((prev) => Math.max(0, prev - 1));
-          setMockDownvotes((prev) => prev + 1);
-        } else if (mockUserVote === 'downvote' && voteType === 'upvote') {
-          setMockDownvotes((prev) => Math.max(0, prev - 1));
-          setMockUpvotes((prev) => prev + 1);
-        } else if (voteType === 'upvote') {
-          setMockUpvotes((prev) => prev + 1);
-        } else {
-          setMockDownvotes((prev) => prev + 1);
-        }
-        setMockUserVote(voteType);
-      }
-      return;
-    }
-
     setIsVoting(true);
     try {
-      // In a real app, you would call an API to vote on the activity
-      // const success = await voteActivity(activity.id, voteType);
-      const success = false;
-
-      if (!success) {
-        Alert.alert('Error', 'Failed to register your vote. Please try again.');
+      if (onVote) {
+        onVote(activity.id, voteType);
+      } else {
+        // If no handler is provided, just show a mock alert
+        Alert.alert('Action', `This would ${voteType} the activity in a real app`);
       }
     } catch (error) {
-      console.error('Error voting:', error);
-      Alert.alert('Error', 'An unexpected error occurred.');
+      console.error('Error handling vote:', error);
     } finally {
       setIsVoting(false);
     }
   };
 
   const handleComment = () => {
-    // In a real app, this would open a comment modal or navigate to a comments screen
-    Alert.alert(
-      'Add Comment',
-      'This would navigate to the activity details screen with comments in a real app.'
-    );
+    if (onComment) {
+      onComment(activity.id);
+    } else {
+      // If no handler is provided, just show a mock alert
+      Alert.alert('Action', 'This would open comments in a real app');
+    }
   };
+
+  // Get comments count - check for ActivityComment instead of comments
+  const commentsCount = activity.ActivityComment?.length || 0;
 
   return (
     <View className="mb-4 overflow-hidden rounded-xl bg-tertiary shadow-sm">
@@ -186,9 +159,9 @@ export const ActivityItem = ({
                 size={18}
                 color={hasUserVoted('upvote') ? '#5BBFB5' : '#78B0A8'}
               />
-              {upvotes > 0 && (
+              {activityUpvotes > 0 && (
                 <AppText size="xs" color="text" className="ml-1">
-                  {upvotes}
+                  {activityUpvotes}
                 </AppText>
               )}
             </Pressable>
@@ -202,9 +175,9 @@ export const ActivityItem = ({
                 size={18}
                 color={hasUserVoted('downvote') ? '#FF6B6B' : '#78B0A8'}
               />
-              {downvotes > 0 && (
+              {activityDownvotes > 0 && (
                 <AppText size="xs" color="text" className="ml-1">
-                  {downvotes}
+                  {activityDownvotes}
                 </AppText>
               )}
             </Pressable>
@@ -212,9 +185,9 @@ export const ActivityItem = ({
             {/* Comment button */}
             <Pressable onPress={handleComment} className="flex-row items-center" hitSlop={10}>
               <MaterialCommunityIcons name="comment-outline" size={18} color="#78B0A8" />
-              {(activity.comments?.length || 0) > 0 && (
+              {commentsCount > 0 && (
                 <AppText size="xs" color="text" className="ml-1">
-                  {activity.comments?.length}
+                  {commentsCount}
                 </AppText>
               )}
             </Pressable>

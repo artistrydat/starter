@@ -1,12 +1,22 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useState } from 'react';
 import { View, FlatList, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 
 import { AppText, Button, SearchBar, TravelCard } from '@/src/components/ui';
-import { DestinationCategory } from '@/src/types/destinations';
-import { useDestinationStore } from '@/store/destinationStore';
+import { DestinationCategory, TripItinerary } from '@/src/types/destinations';
+import {
+  useDestinations,
+  useFavorites,
+  useToggleFavorite,
+  useSearchDestinations,
+} from '@/src/utils/destinationQueries';
 
+// Hardcoded flag for toggling between mock data and real data
+// Set to true for development with mock data, false for production with real data
+const USE_MOCK_DATA = true;
+
+// Define categories for filtering
 const categories: DestinationCategory[] = [
   { id: 'all', label: 'All' },
   { id: 'trending', label: 'Trending' },
@@ -15,56 +25,96 @@ const categories: DestinationCategory[] = [
   { id: 'relaxing', label: 'Relaxing' },
 ];
 
+// Mock favorites IDs
+const MOCK_FAVORITES = ['mock-1', 'mock-3', 'mock-5'];
+
+/**
+ * SecondScreen Component
+ * Handles fetching destinations and UI presentation
+ * Follows the pattern from the guidelines, separating UI from data logic
+ */
 export default function SecondScreen() {
   const router = useRouter();
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<TripItinerary[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
+  // For mock data mode: maintain local state for favorites
+  const [mockFavorites, setMockFavorites] = useState(MOCK_FAVORITES);
+
+  // Fetch destinations using React Query
   const {
-    destinations,
+    data: fetchedDestinations = [],
     isLoading,
     error,
-    favorites,
-    selectedCategory,
-    searchQuery,
-    searchResults,
-    isSearching,
-    fetchDestinations,
-    fetchFavorites,
-    toggleFavorite,
-    setSelectedCategory,
-    setSearchQuery,
-    searchDestinations,
-    clearSearch,
-  } = useDestinationStore();
+    refetch,
+  } = useDestinations(USE_MOCK_DATA, selectedCategory);
 
-  useEffect(() => {
-    // Fetch destinations and user's favorites on component mount
-    fetchDestinations();
-    fetchFavorites();
-  }, [fetchDestinations, fetchFavorites]);
+  // Fetch favorites using React Query (for non-mock mode)
+  const { data: fetchedFavorites = [] } = useFavorites(USE_MOCK_DATA);
 
+  // Mutation for toggling favorites
+  const { mutate: toggleFavorite } = useToggleFavorite(USE_MOCK_DATA);
+
+  // Search hook
+  const { search } = useSearchDestinations(USE_MOCK_DATA);
+
+  // Determine which data to use based on mock mode
+  const destinations = fetchedDestinations;
+  const favorites = USE_MOCK_DATA ? mockFavorites : fetchedFavorites;
+
+  // Category selection handler
   const handleCategoryPress = (categoryId: string) => {
-    // Clear any active search when changing categories
     if (searchQuery) {
       clearSearch();
     }
     setSelectedCategory(categoryId);
   };
 
+  // Navigation handler
   const navigateToCreateDestination = () => {
-    // This is where the floating action button will navigate
-    // For now, we'll just go to the nested screen
     router.push('/second/nested');
   };
 
-  const handleSearch = (query: string) => {
-    searchDestinations(query);
+  // Search handler
+  const handleSearch = async (query: string) => {
+    if (!query.trim()) {
+      clearSearch();
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const results = await search(query);
+      setSearchResults(results);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
-  const handleClearSearch = () => {
-    clearSearch();
+  // Clear search handler
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSearchResults([]);
   };
 
-  // Determine which data to show - search results or regular destinations
+  // Favorite toggle handler with mock support
+  const handleToggleFavorite = (destinationId: string) => {
+    if (USE_MOCK_DATA) {
+      // Toggle favorite in mock data mode
+      setMockFavorites((prev) =>
+        prev.includes(destinationId)
+          ? prev.filter((id) => id !== destinationId)
+          : [...prev, destinationId]
+      );
+    } else {
+      // Use React Query mutation for real data
+      toggleFavorite(destinationId);
+    }
+  };
+
+  // Determine which data to display (search results or destinations)
   const displayData = searchQuery && searchResults.length > 0 ? searchResults : destinations;
 
   return (
@@ -91,7 +141,7 @@ export default function SecondScreen() {
           value={searchQuery}
           onChangeText={setSearchQuery}
           onSearch={handleSearch}
-          onClear={handleClearSearch}
+          onClear={clearSearch}
           isSearching={isSearching}
           className="shadow-sm"
         />
@@ -136,7 +186,7 @@ export default function SecondScreen() {
         </View>
       )}
 
-      {/* Destinations List */}
+      {/* Destinations List with Loading/Error States */}
       {isLoading || isSearching ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#5BBFB5" />
@@ -144,15 +194,13 @@ export default function SecondScreen() {
       ) : error ? (
         <View className="flex-1 items-center justify-center p-4">
           <AppText color="error" size="lg" align="center">
-            {error}
+            {error instanceof Error ? error.message : String(error)}
           </AppText>
           <Button
             title="Try Again"
             color="primary"
             size="lg"
-            onPress={() =>
-              searchQuery ? searchDestinations(searchQuery) : fetchDestinations(selectedCategory)
-            }
+            onPress={() => refetch()}
             className="mt-4"
           />
         </View>
@@ -169,7 +217,7 @@ export default function SecondScreen() {
             <TravelCard
               destination={item}
               isFavorite={favorites.includes(item.id)}
-              onFavoritePress={() => toggleFavorite(item.id)}
+              onFavoritePress={() => handleToggleFavorite(item.id)}
               onPress={() =>
                 router.push({
                   pathname: '/second/nested',

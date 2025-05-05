@@ -27,22 +27,6 @@ export interface Coordinates {
   lng: number;
 }
 
-export interface GlobalDestination {
-  id: string;
-  title: string;
-  location: string;
-  image_url: string;
-  tags?: string[] | null;
-  rating?: number;
-  price_level?: PriceLevel;
-  description?: string;
-  coordinates?: Coordinates;
-  is_featured?: boolean;
-  category?: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface UserFavorite {
   id: string;
   user_id: string;

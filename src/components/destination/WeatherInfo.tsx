@@ -3,10 +3,13 @@ import { View } from 'react-native';
 
 import { AppText } from '@/src/components/ui';
 import { TripItinerary } from '@/src/types/destinations';
-import { mockItinerary } from '@/src/utils/mockItinerary';
 
 type MaterialCommunityIconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
+/**
+ * WeatherInfo component - Pure UI component for displaying weather information
+ * No data fetching or source-specific logic included
+ */
 const getValidIconName = (
   iconName: string | undefined,
   fallback: MaterialCommunityIconName
@@ -16,15 +19,13 @@ const getValidIconName = (
 };
 
 export const WeatherInfo = ({
-  itinerary,
-  useMockData = true,
+  weatherData,
+  weatherOverview,
 }: {
-  itinerary: TripItinerary;
-  useMockData?: boolean;
+  weatherData: TripItinerary['weather'];
+  weatherOverview: TripItinerary['weather_overview'];
 }) => {
-  const data = useMockData ? mockItinerary : itinerary;
-
-  if (!data.weather || data.weather.length === 0 || !data.weather_overview) {
+  if (!weatherData || weatherData.length === 0 || !weatherOverview) {
     return (
       <View className="flex-1 items-center justify-center p-4">
         <AppText size="lg" color="text" align="center">
@@ -42,7 +43,7 @@ export const WeatherInfo = ({
         </AppText>
 
         <View className="mb-6 flex-row justify-between">
-          {data.weather.map((day) => (
+          {weatherData.map((day) => (
             <View key={day.id} className="mx-1 flex-1 items-center rounded-xl bg-tertiary p-4">
               <AppText size="sm" weight="bold" color="text">
                 Day {day.day || 1}
@@ -73,15 +74,15 @@ export const WeatherInfo = ({
           Trip Weather Overview
         </AppText>
         <AppText size="sm" color="text">
-          {data.weather_overview.description || 'No weather overview available'}
+          {weatherOverview.description || 'No weather overview available'}
         </AppText>
 
-        {data.weather_overview.recommendations?.length > 0 && (
+        {weatherOverview.recommendations?.length > 0 && (
           <View className="mt-4">
             <AppText size="base" weight="bold" color="primary" className="mb-2">
               Recommendations
             </AppText>
-            {data.weather_overview.recommendations.map((recommendation) => (
+            {weatherOverview.recommendations.map((recommendation) => (
               <View key={recommendation.id} className="mb-2 flex-row items-center">
                 <MaterialCommunityIcons
                   name={getValidIconName(recommendation.icon, 'information-outline')}

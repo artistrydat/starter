@@ -47,7 +47,7 @@ export const mockItinerary: TripItinerary = {
       condition: 'Sunny',
       high_temp: 25,
       low_temp: 16,
-      icon: 'sunny',
+      icon: 'weather-sunny',
       created_at: '2025-04-20T10:30:00Z',
     },
     {
@@ -58,7 +58,7 @@ export const mockItinerary: TripItinerary = {
       condition: 'Partly Cloudy',
       high_temp: 24,
       low_temp: 15,
-      icon: 'partly-cloudy',
+      icon: 'weather-partly-cloudy',
       created_at: '2025-04-20T10:30:00Z',
     },
     {
@@ -69,7 +69,7 @@ export const mockItinerary: TripItinerary = {
       condition: 'Light Rain',
       high_temp: 21,
       low_temp: 14,
-      icon: 'rainy',
+      icon: 'weather-rainy',
       created_at: '2025-04-20T10:30:00Z',
     },
     {
@@ -80,7 +80,7 @@ export const mockItinerary: TripItinerary = {
       condition: 'Sunny',
       high_temp: 23,
       low_temp: 15,
-      icon: 'sunny',
+      icon: 'weather-sunny',
       created_at: '2025-04-20T10:30:00Z',
     },
   ],
@@ -95,21 +95,21 @@ export const mockItinerary: TripItinerary = {
         id: 'weather-rec-1',
         weather_overview_id: 'weather-overview-1',
         text: 'Pack a lightweight raincoat',
-        icon: 'raincoat',
+        icon: 'umbrella',
         created_at: '2025-04-20T10:30:00Z',
       },
       {
         id: 'weather-rec-2',
         weather_overview_id: 'weather-overview-1',
         text: 'Sunscreen for sunny days',
-        icon: 'sunscreen',
+        icon: 'weather-sunny-alert',
         created_at: '2025-04-20T10:30:00Z',
       },
       {
         id: 'weather-rec-3',
         weather_overview_id: 'weather-overview-1',
         text: 'Comfortable walking shoes',
-        icon: 'shoes',
+        icon: 'shoe-sneaker',
         created_at: '2025-04-20T10:30:00Z',
       },
     ],
@@ -135,7 +135,7 @@ export const mockItinerary: TripItinerary = {
       description:
         'Watch out for common scams like the bracelet scam or petition signers near major attractions.',
       severity: WarningSeverity.Low,
-      icon: 'info',
+      icon: 'information-outline',
       created_at: '2025-04-20T10:30:00Z',
     },
     {
@@ -158,7 +158,7 @@ export const mockItinerary: TripItinerary = {
       name: 'Universal travel adapter',
       category: 'electronics',
       essential: true,
-      icon: 'plug',
+      icon: 'power-plug',
       created_at: '2025-04-20T10:30:00Z',
     },
     {
@@ -167,7 +167,7 @@ export const mockItinerary: TripItinerary = {
       name: 'Comfortable walking shoes',
       category: 'clothing',
       essential: true,
-      icon: 'shoes',
+      icon: 'shoe-sneaker',
       created_at: '2025-04-20T10:30:00Z',
     },
     {
@@ -176,7 +176,7 @@ export const mockItinerary: TripItinerary = {
       name: 'Lightweight rain jacket',
       category: 'clothing',
       essential: false,
-      icon: 'jacket',
+      icon: 'umbrella',
       created_at: '2025-04-20T10:30:00Z',
     },
     {
@@ -236,7 +236,7 @@ export const mockItinerary: TripItinerary = {
       title: 'Tipping Culture',
       description:
         'Service is usually included in restaurant bills, but leaving a small tip is appreciated.',
-      icon: 'euro',
+      icon: 'currency-eur',
       category: 'culture',
       created_at: '2025-04-20T10:30:00Z',
     },

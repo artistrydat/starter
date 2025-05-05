@@ -3,7 +3,11 @@ import { ActivityIndicator, View } from 'react-native';
 
 import { AppText } from '@/src/components/ui';
 
-interface LoadingStateProps {
+/**
+ * LoadingState component - Pure UI component for displaying loading states
+ * No data fetching or source-specific logic included
+ */
+export interface LoadingStateProps {
   message?: string;
   color?: string;
 }
@@ -19,3 +23,5 @@ export const LoadingState = ({
     </AppText>
   </View>
 );
+
+export default LoadingState;

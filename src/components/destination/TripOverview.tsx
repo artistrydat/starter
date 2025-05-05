@@ -3,20 +3,18 @@ import { Image, View } from 'react-native';
 
 import { AppText } from '@/src/components/ui';
 import { TripItinerary } from '@/src/types/destinations';
-import { mockItinerary } from '@/src/utils/mockItinerary';
 
-export const TripOverview = ({
-  itinerary,
-  useMockData = true,
-}: {
+/**
+ * TripOverview component - Pure UI component for displaying trip overview information
+ * No data fetching or source-specific logic included
+ */
+export type TripOverviewProps = {
   itinerary: TripItinerary;
-  useMockData?: boolean;
-}) => {
-  // Use mock data if specified, or if real data is unavailable
-  const data = useMockData ? mockItinerary : itinerary;
+};
 
+export const TripOverview = ({ itinerary }: TripOverviewProps) => {
   // Add safety checks to handle potential undefined values
-  if (!data) {
+  if (!itinerary) {
     return (
       <View className="flex-1 items-center justify-center p-4">
         <AppText size="lg" color="text" align="center">
@@ -28,12 +26,12 @@ export const TripOverview = ({
 
   // Format date range for display
   const getDateRange = () => {
-    if (data.start_date && data.end_date) {
+    if (itinerary.start_date && itinerary.end_date) {
       // If we have explicit start/end dates
-      return `${new Date(data.start_date).toLocaleDateString()} - ${new Date(data.end_date).toLocaleDateString()}`;
-    } else if (data.days && data.days.length > 0) {
+      return `${new Date(itinerary.start_date).toLocaleDateString()} - ${new Date(itinerary.end_date).toLocaleDateString()}`;
+    } else if (itinerary.days && itinerary.days.length > 0) {
       // Otherwise try to get it from the days array
-      return `${data.days[0].date} - ${data.days[data.days.length - 1].date}`;
+      return `${itinerary.days[0].date} - ${itinerary.days[itinerary.days.length - 1].date}`;
     }
     return 'No dates available';
   };
@@ -41,12 +39,12 @@ export const TripOverview = ({
   return (
     <View className="flex-1">
       <View className="mb-4 overflow-hidden rounded-xl bg-quinary shadow-sm">
-        {data.image_url && (
-          <Image source={{ uri: data.image_url }} className="h-48 w-full" resizeMode="cover" />
+        {itinerary.image_url && (
+          <Image source={{ uri: itinerary.image_url }} className="h-48 w-full" resizeMode="cover" />
         )}
         <View className="p-4">
           <AppText size="base" color="text">
-            {data.description || 'No description available'}
+            {itinerary.description || 'No description available'}
           </AppText>
         </View>
       </View>
@@ -60,7 +58,7 @@ export const TripOverview = ({
             </AppText>
           </View>
           <AppText size="sm" color="text">
-            {data.days?.length || 0} Days
+            {itinerary.days?.length || 0} Days
           </AppText>
           <AppText size="xs" color="text">
             {getDateRange()}
@@ -75,7 +73,7 @@ export const TripOverview = ({
             </AppText>
           </View>
           <AppText size="sm" color="text">
-            {(data.total_cost || 0).toLocaleString()} {data.currency || 'EUR'}
+            {(itinerary.total_cost || 0).toLocaleString()} {itinerary.currency || 'EUR'}
           </AppText>
           <AppText size="xs" color="text">
             Activities and meals only
@@ -88,12 +86,12 @@ export const TripOverview = ({
           Trip Highlights
         </AppText>
 
-        {data.trip_highlights && data.trip_highlights.length > 0 ? (
-          data.trip_highlights.map((highlight) => (
+        {itinerary.trip_highlights && itinerary.trip_highlights.length > 0 ? (
+          itinerary.trip_highlights.map((highlight) => (
             <View key={highlight.id} className="mb-4 flex-row items-start">
               <View className="h-8 w-8 items-center justify-center rounded-full bg-gray-200">
                 <AppText size="lg" weight="medium" color="text">
-                  ?
+                  {highlight.icon || '?'}
                 </AppText>
               </View>
               <View className="ml-2 flex-1">

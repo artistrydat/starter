@@ -5,22 +5,20 @@ import DayContent from './DayContent';
 
 import { AppText, Tabs } from '@/src/components/ui';
 import { TripItinerary } from '@/src/types/destinations';
-import { mockItinerary } from '@/src/utils/mockItinerary';
 
-export const TripItineraryTabs = ({
-  itinerary,
-  useMockData = true,
-}: {
+/**
+ * TripItineraryTabs component - Pure UI component for displaying trip itinerary tabs
+ * No data fetching or source-specific logic included
+ */
+export type TripItineraryTabsProps = {
   itinerary: TripItinerary;
-  useMockData?: boolean;
-}) => {
+};
+
+export const TripItineraryTabs = ({ itinerary }: TripItineraryTabsProps) => {
   const [activeDay, setActiveDay] = useState(`day1`);
 
-  // Use mock data if specified or if real data is unavailable
-  const data = useMockData ? mockItinerary : itinerary;
-
   // Add safety check for undefined itinerary
-  if (!data || !data.days || data.days.length === 0) {
+  if (!itinerary || !itinerary.days || itinerary.days.length === 0) {
     return (
       <View className="flex-1 items-center justify-center p-4">
         <AppText size="lg" color="text" align="center">
@@ -31,7 +29,7 @@ export const TripItineraryTabs = ({
   }
 
   // Generate day tab items
-  const dayTabs = data.days.map((day) => ({
+  const dayTabs = itinerary.days.map((day) => ({
     id: `day${day.day_number}`,
     label: `Day ${day.day_number}`,
     icon: '🗓',
@@ -40,7 +38,7 @@ export const TripItineraryTabs = ({
   // Render content based on active day tab
   const renderDayContent = () => {
     const dayNumber = parseInt(activeDay.replace('day', ''), 10);
-    const dayData = data.days.find((day) => day.day_number === dayNumber);
+    const dayData = itinerary.days.find((day) => day.day_number === dayNumber);
     return dayData ? <DayContent day={dayData} /> : null;
   };
 

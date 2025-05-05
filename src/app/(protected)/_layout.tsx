@@ -2,6 +2,7 @@ import { Redirect, Stack, usePathname } from 'expo-router';
 import { useContext } from 'react';
 
 import { AuthContext } from '@/src/utils/authContext';
+import { ReactQueryProvider } from '@/src/utils/queryClient';
 
 export const unstable_settings = {
   initialRouteName: '(tabs)', // anchor
@@ -30,26 +31,28 @@ export default function ProtectedLayout() {
   }
 
   return (
-    <Stack>
-      <Stack.Screen
-        name="(tabs)"
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="modal"
-        options={{
-          presentation: 'modal',
-        }}
-      />
-      <Stack.Screen
-        name="modal-with-stack"
-        options={{
-          presentation: 'modal',
-          headerShown: false,
-        }}
-      />
-    </Stack>
+    <ReactQueryProvider>
+      <Stack>
+        <Stack.Screen
+          name="(tabs)"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="modal"
+          options={{
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
+          name="modal-with-stack"
+          options={{
+            presentation: 'modal',
+            headerShown: false,
+          }}
+        />
+      </Stack>
+    </ReactQueryProvider>
   );
 }
