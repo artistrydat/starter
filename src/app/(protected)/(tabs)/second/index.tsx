@@ -64,9 +64,10 @@ export default function SecondScreen() {
     refetch();
   };
 
-  // Navigation handler remains unchanged
+  // Navigation handler updated to point to a valid route
   const navigateToCreateDestination = () => {
-    router.push('/second/nested');
+    // Navigate to the first itinerary as a default example
+    router.push(`/second/itinerary/mock-itinerary-123`);
   };
 
   // Search handler
@@ -207,12 +208,7 @@ export default function SecondScreen() {
               destination={item}
               isFavorite={favorites.includes(item.id)}
               onFavoritePress={() => handleToggleFavorite(item.id)}
-              onPress={() =>
-                router.push({
-                  pathname: '/second/nested',
-                  params: { id: item.id },
-                })
-              }
+              onPress={() => router.push(`/second/itinerary/${item.id}`)}
               className="mx-4 mt-4"
             />
           )}

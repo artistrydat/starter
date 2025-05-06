@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { View, ScrollView, TextInput, Alert } from 'react-native';
 
@@ -9,7 +10,7 @@ import { WarningsInfo } from '@/src/components/destination/WarningsInfo';
 import { WeatherInfo } from '@/src/components/destination/WeatherInfo';
 import { AppText, Button, Tabs } from '@/src/components/ui';
 import { PermissionType } from '@/src/types/destinations';
-import { mockItinerary } from '@/src/utils/mockItinerary';
+import { mockItineraries, parisItinerary } from '@/src/utils/mockItinerary';
 import { useTripStore } from '@/store/tripStore';
 
 interface ShareStoreType {
@@ -28,7 +29,10 @@ const useShareStore = (): ShareStoreType => {
   };
 };
 
-export default function SecondNestedScreen({ useMockData = true }: { useMockData?: boolean }) {
+export default function ItineraryDetailsScreen({ useMockData = true }: { useMockData?: boolean }) {
+  // Get the ID parameter from the route
+  const { id } = useLocalSearchParams<{ id: string }>();
+
   // State for active main section tab
   const [activeSection, setActiveSection] = useState('overview');
   const [inviteEmail, setInviteEmail] = useState('');
@@ -39,22 +43,30 @@ export default function SecondNestedScreen({ useMockData = true }: { useMockData
   const { currentItinerary, isLoading, error, fetchItinerary } = useTripStore();
   const { shareItinerary } = useShareStore();
 
-  // Fetch itinerary on mount - using a mock ID for now
+  // Fetch itinerary on mount based on the route param
   useEffect(() => {
-    // In a real app, this would likely come from a route param
-    const itineraryId = 'mock-itinerary-123';
-    console.log('Fetching itinerary with ID:', itineraryId);
-    fetchItinerary(itineraryId)
+    if (!id) {
+      console.error('No itinerary ID provided');
+      return;
+    }
+
+    console.log('Fetching itinerary with ID:', id);
+    fetchItinerary(id as string)
       .then((result: any) => {
         console.log('Itinerary fetch result:', result ? 'Success' : 'Failed');
       })
       .catch((err: Error) => {
         console.error('Error in itinerary fetch effect:', err);
       });
-  }, [fetchItinerary]);
+  }, [id, fetchItinerary]);
 
   // Get data - either from store or fallback to mock data
-  const itineraryData = useMockData && !currentItinerary ? mockItinerary : currentItinerary;
+  // For mock data, find the itinerary in mockItineraries that matches the ID
+  const mockItineraryData = useMockData
+    ? mockItineraries.find((itinerary) => itinerary.id === id) || parisItinerary
+    : null;
+
+  const itineraryData = useMockData && !currentItinerary ? mockItineraryData : currentItinerary;
 
   // Main section tabs
   const sectionTabs = [
@@ -78,7 +90,7 @@ export default function SecondNestedScreen({ useMockData = true }: { useMockData
             title="Try Again"
             color="primary"
             size="lg"
-            onPress={() => fetchItinerary('a7b9c0d1-e2f3-4a5b-8c9d-1e2f3a4b5c6d')}
+            onPress={() => id && fetchItinerary(id as string)}
             className="mt-4"
           />
         </View>
