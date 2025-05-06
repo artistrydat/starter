@@ -4,29 +4,28 @@ import { useState } from 'react';
 import { View, FlatList, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 
 import { AppText, Button, SearchBar, TravelCard } from '@/src/components/ui';
-import { DestinationCategory, TripItinerary } from '@/src/types/destinations';
 import {
   useDestinations,
   useFavorites,
   useToggleFavorite,
   useSearchDestinations,
-} from '@/src/utils/destinationQueries';
+} from '@/src/hooks/destinationQueries';
+import { TripItinerary } from '@/src/types/destinations';
 
-// Hardcoded flag for toggling between mock data and real data
-// Set to true for development with mock data, false for production with real data
-const USE_MOCK_DATA = true;
-
-// Define categories for filtering
-const categories: DestinationCategory[] = [
+// Define categories for filtering based on itinerary tags
+const categories = [
   { id: 'all', label: 'All' },
-  { id: 'trending', label: 'Trending' },
+  { id: 'romantic', label: 'Romantic' },
+  { id: 'historic', label: 'Historic' },
+  { id: 'culinary', label: 'Food & Dining' },
+  { id: 'beach', label: 'Beaches' },
+  { id: 'modern', label: 'Modern' },
   { id: 'cultural', label: 'Cultural' },
-  { id: 'adventure', label: 'Adventure' },
-  { id: 'relaxing', label: 'Relaxing' },
+  { id: 'shopping', label: 'Shopping' },
+  { id: 'outdoor', label: 'Outdoor' },
+  { id: 'luxury', label: 'Luxury' },
+  { id: 'favorites', label: 'Favorites' },
 ];
-
-// Mock favorites IDs
-const MOCK_FAVORITES = ['mock-1', 'mock-3', 'mock-5'];
 
 /**
  * SecondScreen Component
@@ -40,39 +39,32 @@ export default function SecondScreen() {
   const [searchResults, setSearchResults] = useState<TripItinerary[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // For mock data mode: maintain local state for favorites
-  const [mockFavorites, setMockFavorites] = useState(MOCK_FAVORITES);
+  // Get destinations from the Zustand store - we'll always use mock data
+  const { data: destinations = [], isLoading, error, refetch } = useDestinations(selectedCategory);
 
-  // Fetch destinations using React Query
-  const {
-    data: fetchedDestinations = [],
-    isLoading,
-    error,
-    refetch,
-  } = useDestinations(USE_MOCK_DATA, selectedCategory);
+  // Fetch favorites using the updated React Query hook
+  const { data: favorites = [] } = useFavorites();
 
-  // Fetch favorites using React Query (for non-mock mode)
-  const { data: fetchedFavorites = [] } = useFavorites(USE_MOCK_DATA);
+  // Mutation for toggling favorites - also uses the updated pattern
+  const { mutate: toggleFavorite } = useToggleFavorite();
 
-  // Mutation for toggling favorites
-  const { mutate: toggleFavorite } = useToggleFavorite(USE_MOCK_DATA);
-
-  // Search hook
-  const { search } = useSearchDestinations(USE_MOCK_DATA);
-
-  // Determine which data to use based on mock mode
-  const destinations = fetchedDestinations;
-  const favorites = USE_MOCK_DATA ? mockFavorites : fetchedFavorites;
+  // Search hook - the search function internally accesses the store
+  const { search } = useSearchDestinations();
 
   // Category selection handler
   const handleCategoryPress = (categoryId: string) => {
     if (searchQuery) {
       clearSearch();
     }
+
     setSelectedCategory(categoryId);
+
+    // The refetch will trigger the query to run again
+    // and the queryFn will use the correct data source
+    refetch();
   };
 
-  // Navigation handler
+  // Navigation handler remains unchanged
   const navigateToCreateDestination = () => {
     router.push('/second/nested');
   };
@@ -86,6 +78,7 @@ export default function SecondScreen() {
 
     setIsSearching(true);
     try {
+      // The search function internally handles mock vs real data
       const results = await search(query);
       setSearchResults(results);
     } finally {
@@ -93,29 +86,24 @@ export default function SecondScreen() {
     }
   };
 
-  // Clear search handler
+  // Clear search handler remains unchanged
   const clearSearch = () => {
     setSearchQuery('');
     setSearchResults([]);
   };
 
-  // Favorite toggle handler with mock support
+  // Favorite toggle handler now uses the mutation from React Query
   const handleToggleFavorite = (destinationId: string) => {
-    if (USE_MOCK_DATA) {
-      // Toggle favorite in mock data mode
-      setMockFavorites((prev) =>
-        prev.includes(destinationId)
-          ? prev.filter((id) => id !== destinationId)
-          : [...prev, destinationId]
-      );
-    } else {
-      // Use React Query mutation for real data
-      toggleFavorite(destinationId);
-    }
+    toggleFavorite(destinationId);
   };
 
   // Determine which data to display (search results or destinations)
-  const displayData = searchQuery && searchResults.length > 0 ? searchResults : destinations;
+  const displayData =
+    searchQuery && searchResults.length > 0
+      ? searchResults
+      : selectedCategory === 'favorites'
+        ? destinations.filter((item) => favorites.includes(item.id))
+        : destinations;
 
   return (
     <View className="flex-1 bg-background">
@@ -126,7 +114,7 @@ export default function SecondScreen() {
             Plan your next adventure
           </AppText>
 
-          {/* Floating Action Button in Header */}
+          {/* Floating Action Button */}
           <TouchableOpacity
             onPress={navigateToCreateDestination}
             className="h-10 w-10 items-center justify-center rounded-full bg-primary shadow-sm"
@@ -168,6 +156,7 @@ export default function SecondScreen() {
         </ScrollView>
       </View>
 
+      {/* Rest of the component remains the same */}
       {/* Search Results Message */}
       {searchQuery && searchResults.length > 0 && (
         <View className="bg-tertiary px-4 py-2">
@@ -213,7 +202,7 @@ export default function SecondScreen() {
       ) : (
         <FlatList
           data={displayData}
-          renderItem={({ item }) => (
+          renderItem={({ item }: { item: TripItinerary }) => (
             <TravelCard
               destination={item}
               isFavorite={favorites.includes(item.id)}

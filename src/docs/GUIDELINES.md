@@ -1,228 +1,334 @@
+Here's a clear separation strategy for your mock/Supabase setup using both libraries effectively:
 
-```markdown
-# Mobile Expo App Implementation Guide
+### **Architecture Blueprint**
 
-## Project structure
-src/app
-├── components/
-│   └── Card.tsx
-├── screens/
-│   └── HomeScreen.tsx
-├── api/
-│   ├── Supabaseclient.ts
-│   ├── mockItems.ts
-│   └── items.ts
-├── hooks/
-│   └── useItems.ts
-├── store/
-│   └── useItemStore.ts
-└── utils/
-    └── types.ts
+```mermaid
+graph TD
+    A[UI Component] --> B[Custom Query Hook]
+    B --> C{USE_MOCK_DATA?}
+    C -->|True| D[Local Mock Handler]
+    C -->|False| E[Zustand Store Action]
+    E --> F[Supabase Client]
 ```
 
-## Setup Instructions
-
-## Implementation Guidelines
-
-### 1. UI Components (`components/Card.tsx`)
-```tsx
-import { View, Text, Button, StyleSheet } from 'react-native';
-import { useItemStore } from '../store/useItemStore';
-import type { Item } from '../utils/types';
-
-export default function Card({ item }: { item: Item }) {
-  const { deleteItem } = useItemStore();
-
-  return (
-    <View style={styles.card}>
-      <Text style={styles.title}>{item.title}</Text>
-      <Text>{item.description}</Text>
-      <Button title="Delete" onPress={() => deleteItem(item.id)} />
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  card: { padding: 16, margin: 8, backgroundColor: '#fff' },
-  title: { fontSize: 18, fontWeight: 'bold' }
-});
-```
-
-### 2. Screen Component (`screens/HomeScreen.tsx`)
-```tsx
-import { FlatList, ActivityIndicator } from 'react-native';
-import { useItems } from '../hooks/useItems';
-import Card from '../components/Card';
-import { useItemStore } from '../store/useItemStore';
-
-export default function HomeScreen() {
-  const { data, isLoading, error } = useItems();
-  const { mockData } = useItemStore();
-
-  if (isLoading) return <ActivityIndicator size="large" />;
-
-  return (
-    <FlatList
-      data={data || mockData}
-      renderItem={({ item }) => <Card item={item} />}
-      keyExtractor={(item) => item.id}
-    />
-  );
-}
-```
-
-### 3. Data Fetching Layer
-
-#### Types (`utils/types.ts`)
-```ts
-export type Item = {
-  id: string;
-  title: string;
-  description?: string;
-};
-```
-
-#### Mock Data (`api/mockItems.ts`)
-```ts
-import { Item } from '../utils/types';
-
-export const mockItems: Item[] = [
-  {
-    id: "1",
-    title: "Mock Task 1",
-    description: "Example mock data item"
-  },
-  {
-    id: "2", 
-    title: "Mock Task 2",
-    description: "Another mock item"
+### **1. Zustand Responsibilities**
+- **Store Design**
+  ```ts
+  interface ApiStore {
+    // Supabase operations
+    fetchData: () => Promise<Data>
+    postData: (payload: Data) => Promise<void>
+    
+    // Client-side control
+    useMock: boolean
+    setUseMock: (value: boolean) => void
   }
-];
-```
-
-#### Supabase Client (`api/client.ts`)
-```ts
-import { createClient } from '@supabase/supabase-js';
-
-export const supabase = createClient(
-  process.env.EXPO_PUBLIC_SUPABASE_URL!,
-  process.env.EXPO_PUBLIC_SUPABASE_KEY!
-);
-```
-
-### 4. State Management
-
-#### Zustand Store (`store/useItemStore.ts`)
-```ts
-import create from 'zustand';
-import { supabase } from '../api/client';
-import { mockItems } from '../api/mockItems';
-import { Item } from '../utils/types';
-
-type Store = {
-  mockData: Item[];
-  deleteItem: (id: string) => Promise<void>;
-  updateItem: (id: string, updates: Partial<Item>) => Promise<void>;
-};
-
-export const useItemStore = create<Store>((set, get) => ({
-  mockData: process.env.EXPO_PUBLIC_USE_MOCK ? mockItems : [],
+  ```
   
-  deleteItem: async (id) => {
-    if (process.env.EXPO_PUBLIC_USE_MOCK) {
-      set({ mockData: get().mockData.filter(item => item.id !== id) });
-    } else {
-      await supabase.from('items').delete().eq('id', id);
-    }
+- **Core Duties**
+  - Manage the mock toggle state
+  - Contain all Supabase client operations
+  - Store API configuration (endpoints, headers)
+  - Handle encryption/decryption if needed
+
+### **2. TanStack Query Responsibilities**
+- **Query/Mutation Setup**
+  ```ts
+  // Query example
+  useQuery({
+    queryKey: ['data', filters],
+    queryFn: () => 
+      useStore.getState().useMock 
+        ? mockFetch(filters)
+        : useStore.getState().fetchData(filters)
+  })
+
+  // Mutation example  
+  useMutation({
+    mutationFn: (payload) =>
+      useStore.getState().useMock
+        ? mockPost(payload)
+        : useStore.getState().postData(payload)
+  })
+  ```
+  
+- **Core Duties**
+  - Manage request caching/revalidation
+  - Handle loading/error states
+  - Retry failed requests
+  - Optimistic updates
+
+### **3. Operation Flow Breakdown**
+
+| **Operation**         | **Mock Path**                | **Supabase Path**               |
+|-----------------------|------------------------------|----------------------------------|
+| **Data Fetching**     | Local JSON/JS object         | Zustand → Supabase client       |
+| **Data Mutation**     | Local state simulation       | Zustand → Supabase transaction  |
+| **Error Handling**    | Manual error simulation      | Automatic Supabase error parsing|
+| **Caching**           | Cache disabled/infinite      | Smart cache invalidation        |
+
+### **4. File Structure Recommendation**
+
+```
+/src
+├─ /utils
+│  ├─ mockItinerary.ts    # Mock data and simulation logic
+│  └─ supabaseClient.ts  # Supabase initialization
+│
+├─ /stores
+│  └─ tripStore.ts        # Zustand store with operations
+│
+├─ /hooks
+│  └─ destinationQueries.ts     # Custom query hooks
+```
+
+### **5. Key Integration Points**
+
+1. **Single Source of Truth**
+   - Zustand stores the mock flag but doesn't handle caching
+   - TanStack Query accesses the flag via `usetripStore.getState()`
+
+2. **Mock Implementation**
+   ```ts
+   // mockHandlers.ts
+   export const mockFetch = async () => {
+     await sleep(500) // Simulate network delay
+     return structuredClone(mockDataset) // Prevent reference issues
+   }
+   ```
+
+3. **Supabase Implementation**
+   ```ts
+   // tripStore.ts
+   fetchData: async () => {
+     const { data, error } = await supabase
+       .from('table')
+       .select('*')
+       
+     if (error) throw new ErrorHandler(error)
+     return data
+   }
+   ```
+
+### **6. Switching Mechanism**
+
+```ts
+// hooks/destinationQueries.ts
+export const useSmartQuery = (queryKey: QueryKey) => {
+  const { useMock, fetchData } = usetripStore()
+  
+  return useQuery({
+    queryKey,
+    queryFn: () => useMock ? mockFetch() : fetchData(),
+    staleTime: useMock ? Infinity : 60_000
+  })
+}
+```
+
+### **7. Benefits of This Split**
+
+1. **Clear Separation**
+   - Zustand = Business logic/connection management
+   - TanStack = Data lifecycle management
+
+2. **Safe Transition**
+   - Switch data sources without touching components
+   - Compare real/mock behavior instantly
+
+3. **Unified Interface**
+   - Components use same hooks regardless of data source
+   - Error handling pattern consistency
+
+4. **Optimized Performance**
+   - Real data: Automatic background refresh
+   - Mock data: No unnecessary network calls
+
+
+I'll help you restructure the code following the separation strategy. Here's the optimized implementation:
+
+```typescript
+// utils/mockItinerary.ts
+export const mockItineraries: TripItinerary[] = [...]; // Your mock data
+export const emptyItinerary: TripItinerary = {...};
+
+export const mockAPI = {
+  fetchDestinations: async (category?: string) => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return mockItineraries.filter(i => i.is_public && (
+      category === 'all' || i.tags.includes(category)
+    ));
+  },
+  // Add similar mock implementations for all operations
+};
+```
+
+```typescript
+// stores/tripStore.ts
+import { create } from 'zustand';
+import { supabase } from '@/utils/supabaseClient';
+import { TripItinerary, TripDay, TripActivity } from '@/types/destinations';
+
+interface TripStore {
+  // State
+  currentItinerary: TripItinerary | null;
+  userItineraries: TripItinerary[];
+  sharedItineraries: TripItinerary[];
+  favorites: string[];
+  
+  // Supabase Operations
+  supabaseFetchDestinations: (category?: string) => Promise<TripItinerary[]>;
+  supabaseFetchItinerary: (id: string) => Promise<TripItinerary | null>;
+  supabaseCreateItinerary: (itinerary: Omit<TripItinerary, 'id'>) => Promise<TripItinerary>;
+  // Add all other Supabase operations...
+}
+
+export const useTripStore = create<TripStore>((set) => ({
+  currentItinerary: null,
+  userItineraries: [],
+  sharedItineraries: [],
+  favorites: [],
+
+  supabaseFetchDestinations: async (category) => {
+    const { data, error } = await supabase
+      .from('trip_itineraries')
+      .select('*')
+      .eq('is_public', true)
+      .ilike('category', `%${category}%`);
+
+    return data as TripItinerary[];
   },
 
-  updateItem: async (id, updates) => {
-    if (process.env.EXPO_PUBLIC_USE_MOCK) {
-      set({
-        mockData: get().mockData.map(item =>
-          item.id === id ? { ...item, ...updates } : item
-        )
-      });
-    } else {
-      await supabase.from('items').update(updates).eq('id', id);
-    }
-  }
+  supabaseFetchItinerary: async (id) => {
+    const { data, error } = await supabase
+      .from('trip_itineraries')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    return data as TripItinerary;
+  },
+
+  supabaseCreateItinerary: async (itinerary) => {
+    const { data, error } = await supabase
+      .from('trip_itineraries')
+      .insert(itinerary)
+      .select()
+      .single();
+
+    return data as TripItinerary;
+  },
+  // Implement all other Supabase operations...
 }));
 ```
 
-### 5. TanStack Query Integration
+```typescript
+// hooks/destinationQueries.ts
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { USE_MOCK_DATA } from '@/config';
+import { mockAPI } from '@/utils/mockItinerary';
+import { useTripStore } from '@/stores/tripStore';
 
-#### Query Hook (`hooks/useItems.ts`)
-```ts
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../api/client';
-import { mockItems } from '../api/mockItems';
-import { useItemStore } from '../store/useItemStore';
+export const tripKeys = { /*...*/ };
 
-const fetchItems = async () => {
-  if (process.env.EXPO_PUBLIC_USE_MOCK) {
-    return mockItems;
-  }
-  
-  const { data, error } = await supabase.from('items').select('*');
-  return error ? [] : data;
+// Generic query handler
+const queryHandler = async <T>({
+  mockFn,
+  supabaseFn
+}: {
+  mockFn: () => Promise<T>,
+  supabaseFn: () => Promise<T>
+}) => {
+  return USE_MOCK_DATA ? mockFn() : supabaseFn();
 };
 
-export const useItems = () => {
+// Fetch destinations
+export const useDestinations = (category?: string) => {
+  const store = useTripStore();
+  
   return useQuery({
-    queryKey: ['items'],
-    queryFn: fetchItems,
-    enabled: !process.env.EXPO_PUBLIC_USE_MOCK
+    queryKey: tripKeys.list(category),
+    queryFn: () => queryHandler({
+      mockFn: () => mockAPI.fetchDestinations(category),
+      supabaseFn: () => store.supabaseFetchDestinations(category)
+    })
   });
 };
+
+// Create itinerary
+export const useCreateItinerary = () => {
+  const store = useTripStore();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (newItinerary: Omit<TripItinerary, 'id'>) => queryHandler({
+      mockFn: () => mockAPI.createItinerary(newItinerary),
+      supabaseFn: () => store.supabaseCreateItinerary(newItinerary)
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(tripKeys.all);
+    }
+  });
+};
+
+// Fetch single itinerary
+export const useItinerary = (id: string) => {
+  const store = useTripStore();
+
+  return useQuery({
+    queryKey: tripKeys.detail(id),
+    queryFn: () => queryHandler({
+      mockFn: () => mockAPI.fetchItinerary(id),
+      supabaseFn: () => store.supabaseFetchItinerary(id)
+    }),
+    enabled: !!id
+  });
+};
+
+// Similar pattern for all other operations...
 ```
 
-## Development Workflow
-
-1. **Toggle Data Source**:
-   - Set `EXPO_PUBLIC_USE_MOCK=true` for local mock data
-   - Set `EXPO_PUBLIC_USE_MOCK=false` for Supabase data
-
-2. **Component Development**:
-   ```bash
-   EXPO_PUBLIC_USE_MOCK=true npx expo start
-   ```
-
-3. **Supabase Integration Testing**:
-   ```bash
-   EXPO_PUBLIC_USE_MOCK=false npx expo start
-   ```
-
-## Best Practices
-
-1. **Component Architecture**:
-   - Keep components in `/components` as pure UI elements
-   - All business logic in stores/hooks
-
-2. **Data Handling**:
-   - Use mock data for UI development
-   - Switch to real data for integration testing
-
-3. **State Management**:
-   - Use Zustand for client-side state
-   - Use TanStack Query for server-state management
-
-4. **Type Safety**:
-   - Maintain all types in `/utils/types.ts`
-   - Use TypeScript interfaces consistently
-
-## Testing Checklist
-
-✅ Verify mock data appears when `USE_MOCK=true`  
-✅ Confirm Supabase connection works  
-✅ Test CRUD operations in both modes  
-✅ Validate error handling for API failures  
-✅ Check UI responsiveness
+```typescript
+// config.ts
+export const USE_MOCK_DATA = import.meta.env.MODE === 'development';
 ```
 
-This guideline provides:
-1. Clear file structure expectations
-2. Ready-to-use code snippets
-3. Environment setup instructions
-4. Development workflow guidance
-5. Best practice reminders
+This structure provides:
+
+1. Clear separation of concerns:
+- Zustand (tripStore.ts) handles only Supabase operations and client state
+- TanStack Query (destinationQueries.ts) handles data fetching/caching
+- Mock data lives in separate files
+
+2. Centralized mock control:
+- Single `USE_MOCK_DATA` flag controls all operations
+- Mock and real implementations have identical interfaces
+- Switching requires no component changes
+
+3. Optimized performance:
+- TanStack handles caching/refetching
+- Zustand manages UI-related state
+- Mock data includes simulated network delays
+
+4. Type safety:
+- Consistent types across mock and real implementations
+- TypeScript generics in query handler
+- Shared type definitions
+
+5. Scalability:
+- Add new operations with same pattern
+- Easy to extend mock data
+- Clear file organization
+
+To use this pattern:
+
+```tsx
+// Component usage example
+const Component = () => {
+  const { data, isLoading } = useDestinations('adventure');
+  const createMutation = useCreateItinerary();
+
+  // Render logic...
+};
+```
+
+This architecture provides a maintainable foundation for both development and production while keeping the benefits of both Zustand and TanStack Query.

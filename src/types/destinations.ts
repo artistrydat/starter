@@ -34,11 +34,6 @@ export interface UserFavorite {
   created_at?: string;
 }
 
-export interface DestinationCategory {
-  id: string;
-  label: string;
-}
-
 export interface ActivityComment {
   id: string;
   user_id: string;
@@ -181,6 +176,7 @@ export interface TripItinerary {
   is_public?: boolean;
   is_private?: boolean;
   is_completed?: boolean;
+  is_favorite?: boolean;
   days: TripDay[];
   weather: TripWeather[];
   weather_overview?: WeatherOverview;

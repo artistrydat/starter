@@ -1,235 +1,231 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+import { useTripStore } from '../../store/tripStore';
 
 import {
   TripItinerary,
-  TripDay,
   TripActivity,
-  VoteType,
+  ActivityComment,
+  ActivityVote,
+  TripDay,
   TripWeather,
   WeatherOverview,
   TripWarning,
   TripTip,
   TripHighlight,
+  VoteType,
   PermissionType,
-  ActivityComment,
-  ActivityVote,
 } from '@/src/types/destinations';
-import { mockItinerary } from '@/src/utils/mockItinerary';
-import { useTripStore } from '@/store/tripStore';
 
-// Central toggle for mock data - set to true to use mock data, false for real data
-export const USE_MOCK_DATA = true;
-
-// Query keys for better cache management
+// QueryKey factory
 export const tripKeys = {
   all: ['trips'] as const,
   lists: () => [...tripKeys.all, 'list'] as const,
-  list: (filters: { category?: string }) => [...tripKeys.lists(), filters] as const,
+  list: (filters: any) => [...tripKeys.lists(), { filters }] as const,
+  details: () => [...tripKeys.all, 'detail'] as const,
+  detail: (id: string) => [...tripKeys.details(), id] as const,
   favorites: () => [...tripKeys.all, 'favorites'] as const,
-  details: (id: string) => [...tripKeys.all, 'detail', id] as const,
   userItineraries: () => [...tripKeys.all, 'user-itineraries'] as const,
   sharedItineraries: () => [...tripKeys.all, 'shared-itineraries'] as const,
   itineraryComponents: {
-    days: (itineraryId: string) => [...tripKeys.details(itineraryId), 'days'] as const,
+    days: (itineraryId: string) => [...tripKeys.detail(itineraryId), 'days'] as const,
     activities: (dayId: string) => ['activities', dayId] as const,
     activityComments: (activityId: string) => ['activity-comments', activityId] as const,
     activityVotes: (activityId: string) => ['activity-votes', activityId] as const,
-    weather: (itineraryId: string) => [...tripKeys.details(itineraryId), 'weather'] as const,
+    weather: (itineraryId: string) => [...tripKeys.detail(itineraryId), 'weather'] as const,
     weatherOverview: (itineraryId: string) =>
-      [...tripKeys.details(itineraryId), 'weather-overview'] as const,
-    warnings: (itineraryId: string) => [...tripKeys.details(itineraryId), 'warnings'] as const,
-    tips: (itineraryId: string) => [...tripKeys.details(itineraryId), 'tips'] as const,
-    highlights: (itineraryId: string) => [...tripKeys.details(itineraryId), 'highlights'] as const,
+      [...tripKeys.detail(itineraryId), 'weather-overview'] as const,
+    warnings: (itineraryId: string) => [...tripKeys.detail(itineraryId), 'warnings'] as const,
+    tips: (itineraryId: string) => [...tripKeys.detail(itineraryId), 'tips'] as const,
+    highlights: (itineraryId: string) => [...tripKeys.detail(itineraryId), 'highlights'] as const,
     sharedUsers: (itineraryId: string) =>
-      [...tripKeys.details(itineraryId), 'shared-users'] as const,
+      [...tripKeys.detail(itineraryId), 'shared-users'] as const,
   },
 };
 
-// Create variation of mock data to simulate different destinations
-const createMockDestinations = (): TripItinerary[] => {
-  const cities = [
-    { city: 'Paris', country: 'France', tags: ['romantic', 'historic', 'culinary'] },
-    { city: 'Rome', country: 'Italy', tags: ['historic', 'culinary', 'ancient'] },
-    { city: 'Barcelona', country: 'Spain', tags: ['beach', 'architecture', 'nightlife'] },
-    { city: 'Tokyo', country: 'Japan', tags: ['modern', 'cultural', 'shopping'] },
-    { city: 'New York', country: 'USA', tags: ['urban', 'multicultural', 'entertainment'] },
-    { city: 'London', country: 'UK', tags: ['historic', 'multicultural', 'museums'] },
-    { city: 'Sydney', country: 'Australia', tags: ['beach', 'outdoor', 'relaxing'] },
-    { city: 'Dubai', country: 'UAE', tags: ['luxury', 'shopping', 'modern'] },
-    { city: 'Amsterdam', country: 'Netherlands', tags: ['canal', 'cycling', 'museums'] },
-    { city: 'Singapore', country: 'Singapore', tags: ['modern', 'food', 'clean'] },
-  ];
-
-  return cities.map((cityInfo, index) => ({
-    ...mockItinerary,
-    id: `mock-${index}`,
-    title: `Exploring ${cityInfo.city}`,
-    description: `A week-long adventure through ${cityInfo.city}`,
-    city: cityInfo.city,
-    location: cityInfo.country,
-    tags: cityInfo.tags,
-    // Add some variety to the images
-    image_url: `https://source.unsplash.com/featured/?${cityInfo.city.toLowerCase()},travel`,
-    // Randomize some attributes
-    rating: 3.5 + Math.random() * 1.5, // Rating between 3.5 and 5.0
-    total_cost: 800 + Math.floor(Math.random() * 1500), // Cost between 800 and 2300
-    is_featured: index < 3, // First 3 are featured
-  }));
+// This utility function is now used in the code
+const queryHandler = async <T>({
+  mockFn,
+  realFn,
+  useMock,
+}: {
+  mockFn: () => Promise<T>;
+  realFn: () => Promise<T>;
+  useMock: boolean;
+}): Promise<T> => {
+  return useMock ? await mockFn() : await realFn();
 };
-
-// Cache mock destinations to avoid recreating them on every query
-let cachedMockDestinations: TripItinerary[] | null = null;
-
-// Hook for fetching destinations with toggle between mock and Zustand
-export function useDestinations(useMockData: boolean = USE_MOCK_DATA, category: string = 'all') {
-  const { fetchDestinations, destinations } = useTripStore();
+// The rest of the hooks can follow the same pattern as above
+// Each hook gets the useMock value from the store and delegates
+// the actual data fetching to the store methods, which handle
+// the mock vs. real logic internally
+// Hook for fetching destinations
+export function useDestinations(category: string = 'all') {
+  // Get the useMock flag from the Zustand store
+  const store = useTripStore();
+  const { fetchDestinations, useMock } = store;
 
   return useQuery({
     queryKey: tripKeys.list({ category }),
     queryFn: async () => {
-      if (useMockData) {
-        // Generate or use cached mock data
-        if (!cachedMockDestinations) {
-          cachedMockDestinations = createMockDestinations();
-        }
-
-        // Filter by category if needed
-        if (category !== 'all') {
-          return cachedMockDestinations.filter(
-            (item) =>
-              item.tags.some((tag) => tag.toLowerCase() === category.toLowerCase()) ||
-              item.category?.toLowerCase() === category.toLowerCase()
-          );
-        }
-
-        return cachedMockDestinations;
-      }
-
-      // Use the Zustand store's fetch function
-      await fetchDestinations(category);
-      return destinations;
+      // Use the queryHandler to abstract the mock/real decision
+      return await queryHandler({
+        mockFn: async () => {
+          await fetchDestinations(category);
+          return useTripStore.getState().destinations;
+        },
+        realFn: async () => {
+          await fetchDestinations(category);
+          return useTripStore.getState().destinations;
+        },
+        useMock,
+      });
     },
-    enabled: !useMockData || category !== 'all', // Only refetch from API when category changes or when not using mock data
+    staleTime: useMock ? Infinity : 5 * 60 * 1000, // 5 minutes for real data, infinite for mock
   });
 }
 
-// Hook for fetching a single itinerary by ID
-export function useItinerary(id: string, useMockData: boolean = USE_MOCK_DATA) {
-  const { fetchItinerary } = useTripStore();
+// Hook for fetching a single itinerary
+export function useItinerary(id: string) {
+  const store = useTripStore();
+  const { fetchItinerary, useMock } = store;
 
   return useQuery({
-    queryKey: tripKeys.details(id),
+    queryKey: tripKeys.detail(id),
     queryFn: async () => {
-      if (useMockData) {
-        // Get or generate mock destinations
-        if (!cachedMockDestinations) {
-          cachedMockDestinations = createMockDestinations();
-        }
-
-        // Find the requested mock destination by ID
-        const mockDestination = cachedMockDestinations.find((item) => item.id === id);
-        return mockDestination || null;
-      }
-
-      // Use the Zustand store's fetch function
-      const result = await fetchItinerary(id);
-      return result;
+      return await queryHandler({
+        mockFn: async () => fetchItinerary(id),
+        realFn: async () => fetchItinerary(id),
+        useMock,
+      });
     },
-    enabled: id !== '',
+    enabled: !!id,
+  });
+}
+
+// Hook for creating a new itinerary
+export function useCreateItinerary() {
+  const { createItinerary, useMock } = useTripStore();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (newItinerary: Omit<TripItinerary, 'id'>) => {
+      return queryHandler({
+        mockFn: async () => createItinerary(newItinerary),
+        realFn: async () => createItinerary(newItinerary),
+        useMock,
+      });
+    },
+    onSuccess: () => {
+      // Invalidate all trip queries to ensure up-to-date data
+      queryClient.invalidateQueries({
+        queryKey: tripKeys.all,
+      });
+    },
+  });
+}
+
+// Hook for updating an existing itinerary
+export function useUpdateItinerary() {
+  const { updateItinerary, useMock } = useTripStore();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (itinerary: TripItinerary) => {
+      return queryHandler({
+        mockFn: async () => updateItinerary(itinerary),
+        realFn: async () => updateItinerary(itinerary),
+        useMock,
+      });
+    },
+    onSuccess: (data) => {
+      // Invalidate the specific itinerary
+      if (data) {
+        queryClient.invalidateQueries({
+          queryKey: tripKeys.detail(data.id),
+        });
+      }
+      // Also invalidate the lists as they might display this itinerary
+      queryClient.invalidateQueries({
+        queryKey: tripKeys.lists(),
+      });
+    },
+  });
+}
+
+// Hook for deleting an itinerary
+export function useDeleteItinerary() {
+  const { deleteItinerary, useMock } = useTripStore();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => {
+      return queryHandler({
+        mockFn: async () => deleteItinerary(id),
+        realFn: async () => deleteItinerary(id),
+        useMock,
+      });
+    },
+    onSuccess: () => {
+      // Invalidate all trip queries after deletion
+      queryClient.invalidateQueries({
+        queryKey: tripKeys.all,
+      });
+    },
   });
 }
 
 // Hook for fetching user itineraries
-export function useUserItineraries(useMockData: boolean = USE_MOCK_DATA) {
-  const { fetchUserItineraries, userItineraries } = useTripStore();
+export function useUserItineraries() {
+  const { fetchUserItineraries, useMock } = useTripStore();
 
   return useQuery({
     queryKey: tripKeys.userItineraries(),
     queryFn: async () => {
-      if (useMockData) {
-        // For user itineraries, return a subset of destinations as "created by user"
-        if (!cachedMockDestinations) {
-          cachedMockDestinations = createMockDestinations();
-        }
-
-        // Return first 3 as user itineraries
-        return cachedMockDestinations.slice(0, 3);
-      }
-
-      // Use the Zustand store's fetch function
       await fetchUserItineraries();
-      return userItineraries;
+      return useTripStore.getState().userItineraries;
     },
+    staleTime: useMock ? Infinity : 5 * 60 * 1000,
   });
 }
 
 // Hook for fetching shared itineraries
-export function useSharedItineraries(useMockData: boolean = USE_MOCK_DATA) {
-  const { fetchSharedItineraries, sharedItineraries } = useTripStore();
+export function useSharedItineraries() {
+  const { fetchSharedItineraries, useMock } = useTripStore();
 
   return useQuery({
     queryKey: tripKeys.sharedItineraries(),
     queryFn: async () => {
-      if (useMockData) {
-        // For shared itineraries, return different subset
-        if (!cachedMockDestinations) {
-          cachedMockDestinations = createMockDestinations();
-        }
-
-        // Return itineraries 4-5 as shared with user
-        return cachedMockDestinations.slice(3, 5);
-      }
-
-      // Use the Zustand store's fetch function
       await fetchSharedItineraries();
-      return sharedItineraries;
+      return useTripStore.getState().sharedItineraries;
     },
+    staleTime: useMock ? Infinity : 5 * 60 * 1000,
   });
 }
 
 // Hook for fetching user favorites
-export function useFavorites(useMockData: boolean = USE_MOCK_DATA) {
-  const { fetchFavorites, favorites } = useTripStore();
+export function useFavorites() {
+  const { fetchFavorites, useMock } = useTripStore();
 
   return useQuery({
     queryKey: tripKeys.favorites(),
     queryFn: async () => {
-      if (useMockData) {
-        // Return mock favorites - IDs of every third mock destination
-        return ['mock-1', 'mock-3', 'mock-5', 'mock-8'];
-      }
-
-      // Use the Zustand store's fetch function
       await fetchFavorites();
-      return favorites;
+      return useTripStore.getState().favorites;
     },
-    enabled: !useMockData,
+    staleTime: useMock ? Infinity : 5 * 60 * 1000,
   });
 }
 
 // Hook for toggling favorites
-export function useToggleFavorite(useMockData: boolean = USE_MOCK_DATA) {
+export function useToggleFavorite() {
   const queryClient = useQueryClient();
   const { toggleFavorite } = useTripStore();
 
   return useMutation({
     mutationFn: async (destinationId: string) => {
-      if (useMockData) {
-        // Simulate toggle with mock data
-        const favorites = queryClient.getQueryData<string[]>(tripKeys.favorites()) || [];
-        const isFavorited = favorites.includes(destinationId);
-
-        // Return the updated favorites list
-        return isFavorited
-          ? favorites.filter((id) => id !== destinationId)
-          : [...favorites, destinationId];
-      }
-
-      // Use the Zustand store's toggle function
       await toggleFavorite(destinationId);
-
-      // Get updated favorites from the store
-      return queryClient.getQueryData<string[]>(tripKeys.favorites()) || [];
+      return useTripStore.getState().favorites;
     },
     onSuccess: (newFavorites) => {
       // Update the favorites query data
@@ -239,94 +235,16 @@ export function useToggleFavorite(useMockData: boolean = USE_MOCK_DATA) {
 }
 
 // Hook for searching destinations
-export function useSearchDestinations(useMockData: boolean = USE_MOCK_DATA) {
-  const { searchDestinations, searchResults } = useTripStore();
+export function useSearchDestinations() {
+  const { searchDestinations } = useTripStore();
 
   const search = async (query: string): Promise<TripItinerary[]> => {
-    if (!query.trim()) return [];
-
-    if (useMockData) {
-      // Search in cached mock data
-      if (!cachedMockDestinations) {
-        cachedMockDestinations = createMockDestinations();
-      }
-
-      const lowerQuery = query.toLowerCase();
-      return cachedMockDestinations.filter(
-        (dest) =>
-          dest.title.toLowerCase().includes(lowerQuery) ||
-          dest.location.toLowerCase().includes(lowerQuery) ||
-          dest.city.toLowerCase().includes(lowerQuery) ||
-          dest.description?.toLowerCase().includes(lowerQuery) ||
-          dest.tags?.some((tag) => tag.toLowerCase().includes(lowerQuery))
-      );
-    }
-
-    // Use the Zustand store's search function
-    await searchDestinations(query);
-    return searchResults;
+    searchDestinations(query);
+    return useTripStore.getState().searchResults;
   };
 
   return { search };
 }
-
-// Hook for creating a new itinerary
-export function useCreateItinerary() {
-  const queryClient = useQueryClient();
-  const { createItinerary } = useTripStore();
-
-  return useMutation({
-    mutationFn: async (newItinerary: Omit<TripItinerary, 'id'>) => {
-      return await createItinerary(newItinerary);
-    },
-    onSuccess: () => {
-      // Invalidate user itineraries query to trigger a refetch
-      queryClient.invalidateQueries({ queryKey: tripKeys.userItineraries() });
-    },
-  });
-}
-
-// Hook for updating an existing itinerary
-export function useUpdateItinerary() {
-  const queryClient = useQueryClient();
-  const { updateItinerary } = useTripStore();
-
-  return useMutation({
-    mutationFn: async (itinerary: TripItinerary) => {
-      return await updateItinerary(itinerary);
-    },
-    onSuccess: (updatedItinerary) => {
-      if (updatedItinerary) {
-        // Update the itinerary in the cache
-        queryClient.setQueryData(tripKeys.details(updatedItinerary.id), updatedItinerary);
-
-        // Invalidate user itineraries list to reflect the changes
-        queryClient.invalidateQueries({ queryKey: tripKeys.userItineraries() });
-      }
-    },
-  });
-}
-
-// Hook for deleting an itinerary
-export function useDeleteItinerary() {
-  const queryClient = useQueryClient();
-  const { deleteItinerary } = useTripStore();
-
-  return useMutation({
-    mutationFn: async (itineraryId: string) => {
-      return await deleteItinerary(itineraryId);
-    },
-    onSuccess: (_, itineraryId) => {
-      // Remove the itinerary from the cache
-      queryClient.removeQueries({ queryKey: tripKeys.details(itineraryId) });
-
-      // Invalidate user itineraries list to reflect the deletion
-      queryClient.invalidateQueries({ queryKey: tripKeys.userItineraries() });
-    },
-  });
-}
-
-// --- New hooks for the consolidated itinerary components ---
 
 // Hook for fetching trip days
 export function useTripDays(itineraryId: string) {
