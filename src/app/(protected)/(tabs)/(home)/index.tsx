@@ -56,10 +56,6 @@ export default function IndexScreen() {
         <Button title="Open Router Modal" color="secondary" size="lg" />
       </Link>
 
-      <Link href="/modal-with-stack" push asChild>
-        <Button title="Open Router Modal (Stack)" color="secondary" size="lg" />
-      </Link>
-
       <Modal
         visible={modalVisible}
         animationType="slide"

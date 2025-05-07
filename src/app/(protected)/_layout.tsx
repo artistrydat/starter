@@ -45,13 +45,6 @@ export default function ProtectedLayout() {
             presentation: 'modal',
           }}
         />
-        <Stack.Screen
-          name="modal-with-stack"
-          options={{
-            presentation: 'modal',
-            headerShown: false,
-          }}
-        />
       </Stack>
     </ReactQueryProvider>
   );

@@ -1,6 +1,6 @@
 import { Stack, usePathname } from 'expo-router';
 
-export default function Layout() {
+export default function ItineraryLayout() {
   const pathname = usePathname();
 
   return (

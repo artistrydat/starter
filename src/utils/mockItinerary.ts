@@ -284,6 +284,7 @@ export const parisItinerary: TripItinerary = {
           category: 'transport',
           icon: 'airplane',
           created_at: '2025-04-20T10:30:00Z',
+          image_url: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5',
           votes: [
             {
               id: 'vote-1',
@@ -326,6 +327,7 @@ export const parisItinerary: TripItinerary = {
           category: 'accommodation',
           icon: 'hotel',
           created_at: '2025-04-20T10:30:00Z',
+          image_url: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5',
           votes: [
             {
               id: 'vote-2',
@@ -375,6 +377,7 @@ export const parisItinerary: TripItinerary = {
           category: 'sightseeing',
           icon: 'monument',
           created_at: '2025-04-20T10:30:00Z',
+          image_url: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5',
           votes: [
             {
               id: 'vote-4',
@@ -658,6 +661,7 @@ export const tokyoItinerary: TripItinerary = {
           category: 'transport',
           icon: 'airplane',
           created_at: '2025-05-01T14:30:00Z',
+          image_url: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5',
           votes: [
             {
               id: 'vote-1',
@@ -700,6 +704,7 @@ export const tokyoItinerary: TripItinerary = {
           category: 'accommodation',
           icon: 'hotel',
           created_at: '2025-05-01T14:30:00Z',
+          image_url: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5',
           votes: [
             {
               id: 'vote-1',
@@ -732,6 +737,7 @@ export const tokyoItinerary: TripItinerary = {
           category: 'food',
           icon: 'food',
           created_at: '2025-05-01T14:30:00Z',
+          image_url: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5',
           votes: [
             {
               id: 'vote-1',
@@ -1015,6 +1021,7 @@ export const romeItinerary: TripItinerary = {
           category: 'transport',
           icon: 'airplane',
           created_at: '2025-05-03T11:20:00Z',
+          image_url: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5',
           votes: [
             {
               id: 'vote-1',
@@ -1057,6 +1064,8 @@ export const romeItinerary: TripItinerary = {
           category: 'accommodation',
           icon: 'hotel',
           created_at: '2025-05-03T11:20:00Z',
+          image_url: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5',
+
           votes: [
             {
               id: 'vote-1',
@@ -1108,6 +1117,7 @@ export const romeItinerary: TripItinerary = {
           category: 'sightseeing',
           icon: 'monument',
           created_at: '2025-05-03T11:20:00Z',
+          image_url: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5',
           votes: [
             {
               id: 'vote-1',

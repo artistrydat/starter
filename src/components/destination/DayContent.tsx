@@ -134,7 +134,13 @@ export const DayContent = ({ day }: DayContentProps) => {
 
       {day.activities.length > 0 ? (
         day.activities.map((activity) => (
-          <ActivityItem key={activity.id} activity={activity} dayId={day.id} editable={false} />
+          <ActivityItem
+            key={activity.id}
+            activity={activity}
+            dayId={day.id}
+            itineraryId={day.itinerary_id}
+            editable={false}
+          />
         ))
       ) : (
         <View className="items-center justify-center py-8">
