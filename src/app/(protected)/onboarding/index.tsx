@@ -6,7 +6,7 @@ import { AppText, Button } from '@/src/components/ui';
 
 export default function OnboardingIndex() {
   return (
-    <View className="bg-quinary flex-1">
+    <View className="flex-1 bg-quinary">
       <View className="flex-1 items-center justify-center p-6">
         <View className="mb-12">
           <AppText size="4xl" className="text-center">
@@ -27,9 +27,9 @@ export default function OnboardingIndex() {
 
       <View className="space-y-4 p-6">
         <Link href="./onboarding/preferences" asChild>
-          <Button title="Let's Go" className="bg-primary rounded-full px-8 py-4" />
+          <Button title="Let's Go" className="rounded-full bg-primary px-8 py-4" />
         </Link>
-        <Button title="I'll do it later" className="bg-secondary/20 rounded-full px-8 py-4" />
+        <Button title="I'll do it later" className="rounded-full bg-secondary/20 px-8 py-4" />
       </View>
     </View>
   );

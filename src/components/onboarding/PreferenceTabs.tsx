@@ -1,6 +1,6 @@
 import 'nativewind';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ActivityIndicator, ScrollView, TouchableOpacity, View } from 'react-native';
 
 import { EditPreferencesModal } from './EditPreferencesModal';
@@ -8,7 +8,11 @@ import { EditPreferencesModal } from './EditPreferencesModal';
 import { AppText, Tabs } from '@/src/components/ui';
 import { PreferencesType, sections, BudgetPreference } from '@/src/types/preferences';
 import { TabItem } from '@/src/types/tabs';
-import { useTravelPreferencesStore } from '@/store/store';
+
+/**
+ * PreferenceTabs - Pure UI component for displaying preference tabs
+ * No data fetching or source-specific logic included
+ */
 
 // Style native components with class name props enabled
 const StyledView = View as typeof View & { className?: string };
@@ -125,17 +129,23 @@ const TabContent = ({ activeTab, values, onUpdatePreferences, onEdit }: TabConte
 type PreferenceTabsProps = {
   activeTab: keyof typeof sections;
   onTabChange: (tab: keyof typeof sections) => void;
+  preferences: PreferencesType;
+  isLoading: boolean;
+  error: string | null;
+  onUpdatePreferences: (type: keyof PreferencesType, values: string[] | BudgetPreference) => void;
+  isUpdating?: boolean;
 };
 
-export const PreferenceTabs = ({ activeTab, onTabChange }: PreferenceTabsProps) => {
-  const { preferences, isLoading, error, fetchPreferences, updatePreferences } =
-    useTravelPreferencesStore();
-
+export const PreferenceTabs = ({
+  activeTab,
+  onTabChange,
+  preferences,
+  isLoading,
+  error,
+  onUpdatePreferences,
+  isUpdating = false,
+}: PreferenceTabsProps) => {
   const [editingSection, setEditingSection] = useState<keyof typeof sections | null>(null);
-
-  useEffect(() => {
-    fetchPreferences();
-  }, [fetchPreferences]);
 
   // Convert sections to TabItem format for the Tabs component
   const tabItems: TabItem[] = Object.entries(sections).map(([key, section]) => ({
@@ -143,13 +153,6 @@ export const PreferenceTabs = ({ activeTab, onTabChange }: PreferenceTabsProps) 
     label: section.title,
     icon: section.emoji,
   }));
-
-  const handleUpdatePreferences = async (
-    type: keyof PreferencesType,
-    values: string[] | BudgetPreference
-  ) => {
-    await updatePreferences({ [type]: values } as Partial<PreferencesType>);
-  };
 
   const handleEditTab = (section: keyof typeof sections) => {
     setEditingSection(section);
@@ -194,7 +197,7 @@ export const PreferenceTabs = ({ activeTab, onTabChange }: PreferenceTabsProps) 
                 ? (getPreferenceValue(preferences, activeTab) as BudgetPreference)
                 : ((getPreferenceValue(preferences, activeTab) ?? []) as string[])
             }
-            onUpdatePreferences={handleUpdatePreferences}
+            onUpdatePreferences={onUpdatePreferences}
             onEdit={() => handleEditTab(activeTab)}
           />
         </StyledView>
@@ -205,8 +208,9 @@ export const PreferenceTabs = ({ activeTab, onTabChange }: PreferenceTabsProps) 
           visible
           section={editingSection}
           currentValues={getPreferenceValue(preferences, editingSection)}
-          onSave={handleUpdatePreferences}
+          onSave={onUpdatePreferences}
           onClose={() => setEditingSection(null)}
+          isLoading={isUpdating}
         />
       )}
     </StyledView>

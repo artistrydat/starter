@@ -14,12 +14,18 @@ import {
 import { AppText, Button } from '@/src/components/ui';
 import { PreferencesType, sections, BudgetPreference } from '@/src/types/preferences';
 
+/**
+ * EditPreferencesModal - Pure UI component for editing user preferences
+ * No data fetching or source-specific logic included
+ */
+
 type EditPreferencesModalProps = {
   visible: boolean;
   onClose: () => void;
   section: keyof typeof sections;
   currentValues: string[] | BudgetPreference;
-  onSave: (type: keyof PreferencesType, values: string[] | BudgetPreference) => Promise<void>;
+  onSave: (type: keyof PreferencesType, values: string[] | BudgetPreference) => void;
+  isLoading?: boolean;
 };
 
 const defaultBudgetPreference: BudgetPreference = {
@@ -37,6 +43,7 @@ export function EditPreferencesModal({
   section,
   currentValues,
   onSave,
+  isLoading = false,
 }: EditPreferencesModalProps) {
   const initialBudgetValues =
     section === 'budget' && isBudgetPreference(currentValues)
@@ -68,16 +75,11 @@ export function EditPreferencesModal({
     );
   };
 
-  const handleSave = async () => {
-    try {
-      if (section === 'budget') {
-        await onSave(section, budgetValues);
-      } else {
-        await onSave(section, selectedValues);
-      }
-      onClose();
-    } catch (error) {
-      console.error('Error saving preferences:', error);
+  const handleSave = () => {
+    if (section === 'budget') {
+      onSave(section, budgetValues);
+    } else {
+      onSave(section, selectedValues);
     }
   };
 
@@ -149,7 +151,13 @@ export function EditPreferencesModal({
 
               {/* Action Buttons */}
               <View className="flex-row justify-end">
-                <Button title="Save Changes" color="primary" size="sm" onPress={handleSave} />
+                <Button
+                  title={isLoading ? 'Saving...' : 'Save Changes'}
+                  color="primary"
+                  size="sm"
+                  onPress={handleSave}
+                  disabled={isLoading}
+                />
               </View>
             </View>
           </BlurView>

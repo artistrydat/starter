@@ -1,8 +1,13 @@
-import { useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { GestureResponderEvent, LayoutChangeEvent, TouchableOpacity, View } from 'react-native';
 
 import { AppText, Button } from '@/src/components/ui';
 import { sections, PreferencesType } from '@/src/types/preferences';
+
+/**
+ * OnboardingScreen - Pure UI component for displaying onboarding flow
+ * No data fetching or source-specific logic included
+ */
 
 type OnboardingStepType = {
   id: keyof PreferencesType;
@@ -20,12 +25,18 @@ const STEPS: OnboardingStepType[] = [
 
 interface OnboardingProps {
   onComplete: (preferences: PreferencesType, budgetRange: number) => void;
+  initialPreferences?: Partial<PreferencesType>;
+  initialBudgetRange?: number;
 }
 
-export const OnboardingScreen = ({ onComplete }: OnboardingProps) => {
+export const OnboardingScreen = ({
+  onComplete,
+  initialPreferences = {},
+  initialBudgetRange = 50,
+}: OnboardingProps) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [preferences, setPreferences] = useState<Partial<PreferencesType>>({});
-  const [budgetRange, setBudgetRange] = useState(50);
+  const [preferences, setPreferences] = useState<Partial<PreferencesType>>(initialPreferences);
+  const [budgetRange, setBudgetRange] = useState(initialBudgetRange);
   const [sliderWidth, setSliderWidth] = useState(0);
   const sliderRef = useRef<View>(null);
 
@@ -81,7 +92,7 @@ export const OnboardingScreen = ({ onComplete }: OnboardingProps) => {
   const currentSection = sections[STEPS[currentStep].id];
   const step = STEPS[currentStep];
 
-  const handleNext = async () => {
+  const handleNext = () => {
     if (currentStep === STEPS.length - 1) {
       onComplete(preferences as PreferencesType, budgetRange);
     } else {
@@ -90,7 +101,7 @@ export const OnboardingScreen = ({ onComplete }: OnboardingProps) => {
   };
 
   return (
-    <View className="bg-background flex-1">
+    <View className="flex-1 bg-background">
       <View className="flex-1 p-6">
         <AppText size="2xl" weight="bold" color="text" className="mb-2">
           {currentSection.emoji} {currentSection.title}
