@@ -3,7 +3,7 @@ import React from 'react';
 import { View } from 'react-native';
 
 import { OnboardingScreen } from '@/src/components/onboarding';
-import { usePreferences } from '@/src/hooks/preferencesQueries';
+import { usePreferences } from '@/src/hooks/profileQueries';
 import { PreferencesType } from '@/src/types/preferences';
 
 export default function PreferencesScreen() {

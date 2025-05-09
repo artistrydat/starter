@@ -12,37 +12,16 @@ import {
 } from 'react-native';
 
 import { AppText, Container } from '@/src/components/ui';
+import { useDestinations, tripKeys } from '@/src/hooks/destinationQueries';
+import { useUserProfile, usePreferences } from '@/src/hooks/profileQueries';
 import { sections } from '@/src/types/preferences';
-import { ProfileUser } from '@/src/types/profiles';
 import { AuthContext } from '@/src/utils/authContext';
-import { mockItineraries } from '@/src/utils/mockItinerary';
-import { useTravelPreferencesStore } from '@/store/store';
+import { queryClient } from '@/src/utils/queryClient';
+import { useTripStore } from '@/store/tripStore';
 
 // Default image to use when itinerary image is missing
 const DEFAULT_IMAGE =
   'https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?q=80&w=3387&auto=format&fit=crop';
-
-// Enhanced mock profile data to match ProfileUser type
-const PROFILE_DATA: ProfileUser = {
-  id: 'user-123',
-  username: 'moaalmusfer',
-  fullName: 'Mosa Alexander',
-  bio: 'Travel enthusiast | Adventure seeker ✈️',
-  avatarUrl: 'https://source.unsplash.com/random/200x200?portrait',
-  stats: {
-    itineraryCount: 23,
-    followersCount: 486,
-    followingCount: 263,
-    issubscribed: true,
-    isfollowing: false,
-    isblocked: false,
-    isfollower: true,
-    credit: 750,
-    ispremium: true,
-  },
-  preferences: ['nature', 'culture', 'photography'],
-  travelStyle: 'Adventure seeker',
-};
 
 const ProfileStats = ({ label, value }: { label: string; value: number | string }) => (
   <View className="items-center">
@@ -80,26 +59,39 @@ export default function FourthScreen() {
   const authState = useContext(AuthContext);
   const [activeTab, setActiveTab] = useState('grid');
 
-  // Use PROFILE_DATA as the userProfile
-  const userProfile = PROFILE_DATA;
+  // Fetch user profile using our consolidated hook
+  const { data: userProfile, isLoading: profileLoading } = useUserProfile();
 
-  const {
-    preferences,
-    isLoading: preferencesLoading,
-    fetchPreferences,
-  } = useTravelPreferencesStore();
+  // Fetch user preferences using our consolidated hook
+  const { data: preferences, isLoading: preferencesLoading } = usePreferences();
+
+  // Fetch destinations (trips) using React Query hook
+  const { isLoading: destinationsLoading } = useDestinations();
+
+  // Get trip store for itineraries
+  const { fetchUserItineraries, userItineraries } = useTripStore();
 
   useEffect(() => {
-    fetchPreferences();
-  }, [fetchPreferences]);
+    // Fetch user itineraries when component mounts
+    fetchUserItineraries();
+
+    // Prefetch other data that might be needed
+    queryClient.prefetchQuery({
+      queryKey: tripKeys.favorites(),
+    });
+  }, [fetchUserItineraries]);
+
+  // Loading state
+  const isLoading = profileLoading || preferencesLoading || destinationsLoading;
 
   // Get user travel style from preferences
   const getUserTravelStyle = () => {
-    const travelVibes = preferences.travel_vibe || [];
-    if (travelVibes.length === 0) return 'Not set';
+    if (!preferences || !preferences.travel_vibe || preferences.travel_vibe.length === 0) {
+      return 'Not set';
+    }
 
     // Map preference IDs to readable labels
-    return travelVibes
+    return preferences.travel_vibe
       .map((vibe) => {
         const option = sections.travel_vibe.options.find((opt) => opt.id === vibe);
         return option ? `${option.emoji} ${option.label}` : vibe;
@@ -107,16 +99,65 @@ export default function FourthScreen() {
       .join(', ');
   };
 
-  // Get user travel destinations from preferences
+  // Get user travel destinations/purposes from preferences
   const getUserTravelDestinations = () => {
-    const travelPurposes = preferences.travel_purpose || [];
-    if (travelPurposes.length === 0) return 'Not set';
+    if (!preferences || !preferences.travel_purpose || preferences.travel_purpose.length === 0) {
+      return 'Not set';
+    }
 
     // Map preference IDs to readable labels
-    return travelPurposes
+    return preferences.travel_purpose
       .map((purpose) => {
         const option = sections.travel_purpose.options.find((opt) => opt.id === purpose);
         return option ? `${option.emoji} ${option.label}` : purpose;
+      })
+      .join(', ');
+  };
+
+  // Get user budget preferences
+  const getUserBudgetPreference = () => {
+    if (!preferences || !preferences.budget) {
+      return 'Not set';
+    }
+
+    const { style, amount } = preferences.budget;
+
+    let styleText = '';
+    if (style && style.length > 0) {
+      styleText = style
+        .map((s) => {
+          const option = sections.budget.options.find((opt) => opt.id === s);
+          return option ? `${option.emoji} ${option.label}` : s;
+        })
+        .join(', ');
+    } else {
+      // If no explicit style but we have amount, calculate from amount
+      if (amount < 33) {
+        styleText = '🪙 Budget';
+      } else if (amount < 66) {
+        styleText = '💵 Mid-Range';
+      } else {
+        styleText = '💎 Luxury';
+      }
+    }
+
+    return styleText;
+  };
+
+  // Get travel companions preference
+  const getTravelCompanions = () => {
+    if (
+      !preferences ||
+      !preferences.travel_companion ||
+      preferences.travel_companion.length === 0
+    ) {
+      return 'Not set';
+    }
+
+    return preferences.travel_companion
+      .map((companion) => {
+        const option = sections.travel_companion.options.find((opt) => opt.id === companion);
+        return option ? `${option.emoji} ${option.label}` : companion;
       })
       .join(', ');
   };
@@ -126,16 +167,36 @@ export default function FourthScreen() {
     router.push(`/second/itinerary/${id}`);
   };
 
-  // Filter itineraries to display only private itineraries
-  const privateItineraries = mockItineraries.filter(
-    (itinerary) => itinerary.is_private && itinerary.user_id === userProfile.id
-  );
+  // Navigate to preferences edit screen
+  const handleEditPreferences = () => {
+    router.push('/onboarding/preferences');
+  };
 
-  // Get bookmarked itineraries
-  const bookmarkedItineraries = mockItineraries.filter((itinerary) => itinerary.is_bookmarked);
+  // Filter itineraries to display based on active tab
+  const getFilteredItineraries = () => {
+    if (!userItineraries) return [];
 
-  // Get favorite itineraries
-  const favoriteItineraries = mockItineraries.filter((itinerary) => itinerary.is_favorite);
+    if (activeTab === 'grid') {
+      return userItineraries.filter((itinerary) => itinerary.is_private);
+    } else if (activeTab === 'bookmarked') {
+      return userItineraries.filter((itinerary) => itinerary.is_bookmarked);
+    } else if (activeTab === 'favorite') {
+      return userItineraries.filter((itinerary) => itinerary.is_favorite);
+    }
+    return [];
+  };
+
+  const filteredItineraries = getFilteredItineraries();
+
+  if (isLoading || !userProfile) {
+    return (
+      <Container>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#5BBFB5" />
+        </View>
+      </Container>
+    );
+  }
 
   return (
     <Container>
@@ -144,26 +205,26 @@ export default function FourthScreen() {
         <View className="flex-row items-center justify-between px-4 py-2">
           <View className="flex-row items-center">
             <AppText size="xl" weight="bold">
-              {userProfile.username}
+              {userProfile.username || 'User'}
             </AppText>
 
             {/* Subscription Status */}
             <View className="ml-2 flex-row items-center">
-              {userProfile.stats.issubscribed && (
+              {userProfile.issubscribed && (
                 <View className="mr-1">
                   <Ionicons name="checkmark-circle" size={16} color="#5BBFB5" />
                 </View>
               )}
 
               {/* Premium Status */}
-              {userProfile.stats.ispremium && (
+              {userProfile.ispremium && (
                 <View className="mr-1">
                   <Ionicons name="star" size={16} color="#FFD700" />
                 </View>
               )}
 
               {/* Follower Status */}
-              {userProfile.stats.isfollower && (
+              {userProfile.isfollower && (
                 <View className="mr-1">
                   <Ionicons name="people" size={16} color="#FF9D76" />
                 </View>
@@ -176,7 +237,7 @@ export default function FourthScreen() {
             <View className="mr-3 flex-row items-center rounded-full bg-tertiary px-2 py-0.5">
               <Ionicons name="wallet-outline" size={14} color="#3A464F" />
               <AppText size="xs" weight="medium" className="ml-1">
-                {userProfile.stats.credit} credits
+                {userProfile.credit} credits
               </AppText>
             </View>
 
@@ -195,22 +256,25 @@ export default function FourthScreen() {
           {/* Profile Image */}
           <View className="mr-6 items-center justify-center">
             <View className="h-20 w-20 overflow-hidden rounded-full border-2 border-primary bg-gray-200">
-              <Image source={{ uri: userProfile.avatarUrl }} className="h-full w-full" />
+              <Image
+                source={{ uri: userProfile.avatar_url || 'https://i.pravatar.cc/300' }}
+                className="h-full w-full"
+              />
             </View>
           </View>
 
           {/* Stats */}
           <View className="flex-1 flex-row items-center justify-around">
-            <ProfileStats label="Itineraries" value={userProfile.stats.itineraryCount} />
-            <ProfileStats label="Followers" value={userProfile.stats.followersCount} />
-            <ProfileStats label="Following" value={userProfile.stats.followingCount} />
+            <ProfileStats label="Itineraries" value={userProfile.itineraryCount || 0} />
+            <ProfileStats label="Followers" value={userProfile.followersCount || 0} />
+            <ProfileStats label="Following" value={userProfile.followingCount || 0} />
           </View>
         </View>
 
         {/* Bio */}
         <View className="px-4 py-1">
-          <AppText weight="semibold">{userProfile.fullName}</AppText>
-          <AppText size="sm">{userProfile.bio}</AppText>
+          <AppText weight="semibold">{userProfile.full_name}</AppText>
+          <AppText size="sm">{userProfile.bio || 'No bio yet'}</AppText>
         </View>
 
         {/* Action Buttons */}
@@ -243,11 +307,21 @@ export default function FourthScreen() {
             </View>
           ) : (
             <View className="py-2">
-              <AppText size="sm">Your travel style: {getUserTravelStyle()}</AppText>
-              <AppText size="sm">Favorite destinations: {getUserTravelDestinations()}</AppText>
+              <AppText size="sm">
+                <AppText weight="medium">Travel style:</AppText> {getUserTravelStyle()}
+              </AppText>
+              <AppText size="sm">
+                <AppText weight="medium">Destinations:</AppText> {getUserTravelDestinations()}
+              </AppText>
+              <AppText size="sm">
+                <AppText weight="medium">Budget:</AppText> {getUserBudgetPreference()}
+              </AppText>
+              <AppText size="sm">
+                <AppText weight="medium">Travel with:</AppText> {getTravelCompanions()}
+              </AppText>
               <TouchableOpacity
                 className="mt-2 self-start rounded-md bg-primary px-3 py-1"
-                onPress={() => router.push('/onboarding/preferences')}>
+                onPress={handleEditPreferences}>
                 <AppText size="sm" color="white" weight="medium">
                   Edit Preferences
                 </AppText>
@@ -287,38 +361,10 @@ export default function FourthScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Photo Grid - Using mockItineraries based on active tab */}
+        {/* Photo Grid - Using real data based on active tab */}
         <View className="flex-row flex-wrap">
-          {activeTab === 'grid' && privateItineraries.length > 0 ? (
-            privateItineraries.map((itinerary) => (
-              <ProfileGridItem
-                key={itinerary.id}
-                imageUrl={itinerary.image_url || DEFAULT_IMAGE}
-                title={itinerary.title}
-                onPress={() => handleItineraryPress(itinerary.id)}
-              />
-            ))
-          ) : activeTab === 'grid' ? (
-            <View className="w-full items-center py-8">
-              <AppText color="tertiary">No private itineraries yet</AppText>
-            </View>
-          ) : activeTab === 'bookmarked' && bookmarkedItineraries.length > 0 ? (
-            // Bookmarked tab content with consistent styling
-            bookmarkedItineraries.map((itinerary) => (
-              <ProfileGridItem
-                key={itinerary.id}
-                imageUrl={itinerary.image_url || DEFAULT_IMAGE}
-                title={itinerary.title}
-                onPress={() => handleItineraryPress(itinerary.id)}
-              />
-            ))
-          ) : activeTab === 'bookmarked' ? (
-            <View className="w-full items-center py-8">
-              <AppText color="tertiary">No bookmarked itineraries</AppText>
-            </View>
-          ) : activeTab === 'favorite' && favoriteItineraries.length > 0 ? (
-            // Favorite tab content with consistent styling
-            favoriteItineraries.map((itinerary) => (
+          {filteredItineraries.length > 0 ? (
+            filteredItineraries.map((itinerary) => (
               <ProfileGridItem
                 key={itinerary.id}
                 imageUrl={itinerary.image_url || DEFAULT_IMAGE}
@@ -328,7 +374,13 @@ export default function FourthScreen() {
             ))
           ) : (
             <View className="w-full items-center py-8">
-              <AppText color="tertiary">No favorite itineraries</AppText>
+              <AppText color="tertiary">
+                {activeTab === 'grid'
+                  ? 'No private itineraries yet'
+                  : activeTab === 'bookmarked'
+                    ? 'No bookmarked itineraries'
+                    : 'No favorite itineraries'}
+              </AppText>
             </View>
           )}
         </View>

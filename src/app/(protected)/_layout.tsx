@@ -40,6 +40,18 @@ export default function ProtectedLayout() {
           }}
         />
         <Stack.Screen
+          name="onboarding"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="profile"
+          options={{
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
           name="modal"
           options={{
             presentation: 'modal',

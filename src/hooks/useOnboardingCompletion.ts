@@ -1,7 +1,9 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useContext } from 'react';
 import { Alert } from 'react-native';
+
+import { profileKeys } from './profileQueries';
 
 import { PreferencesType } from '@/src/types/preferences';
 import { AuthContext } from '@/src/utils/authContext';
@@ -13,6 +15,7 @@ import { supabase, getSessionWithRetry } from '@/src/utils/supabaseClient';
 export function useOnboardingCompletion() {
   const router = useRouter();
   const { logIn } = useContext(AuthContext);
+  const queryClient = useQueryClient();
 
   // Convert budget range to a category
   const getBudgetCategory = (range: number) => {
@@ -97,6 +100,14 @@ export function useOnboardingCompletion() {
     },
     onSuccess: async (data) => {
       console.log('Onboarding completed successfully, refreshing session');
+
+      // Invalidate preferences queries to ensure fresh data
+      queryClient.invalidateQueries({
+        queryKey: profileKeys.preferences(),
+      });
+
+      // Optimistically update the preferences cache
+      queryClient.setQueryData(profileKeys.preferences(), data.preferences);
 
       // Use the session user email to log in again
       if (data.user.email) {

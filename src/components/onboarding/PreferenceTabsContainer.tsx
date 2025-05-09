@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 import { PreferenceTabs } from './PreferenceTabs';
 
-import { usePreferences, useUpdatePreference } from '@/src/hooks/preferencesQueries';
+import { usePreferences, useUpdatePreference } from '@/src/hooks/profileQueries';
 import { BudgetPreference, PreferencesType, sections } from '@/src/types/preferences';
 
 /**

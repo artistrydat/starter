@@ -1,7 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { useTripStore } from '../../store/tripStore';
-
 import {
   TripItinerary,
   TripActivity,
@@ -16,6 +14,7 @@ import {
   VoteType,
   PermissionType,
 } from '@/src/types/destinations';
+import { useTripStore } from '@/store/tripStore';
 
 // QueryKey factory
 export const tripKeys = {
@@ -40,64 +39,52 @@ export const tripKeys = {
     highlights: (itineraryId: string) => [...tripKeys.detail(itineraryId), 'highlights'] as const,
     sharedUsers: (itineraryId: string) =>
       [...tripKeys.detail(itineraryId), 'shared-users'] as const,
+    packingItems: (itineraryId: string) =>
+      [...tripKeys.detail(itineraryId), 'packing-items'] as const,
   },
+  globalDestinations: () => [...tripKeys.all, 'global-destinations'] as const,
 };
 
-// This utility function is now used in the code
-const queryHandler = async <T>({
-  mockFn,
-  realFn,
-  useMock,
-}: {
-  mockFn: () => Promise<T>;
-  realFn: () => Promise<T>;
-  useMock: boolean;
-}): Promise<T> => {
-  return useMock ? await mockFn() : await realFn();
-};
-// The rest of the hooks can follow the same pattern as above
-// Each hook gets the useMock value from the store and delegates
-// the actual data fetching to the store methods, which handle
-// the mock vs. real logic internally
 // Hook for fetching destinations
 export function useDestinations(category: string = 'all') {
-  // Get the useMock flag from the Zustand store
-  const store = useTripStore();
-  const { fetchDestinations, useMock } = store;
+  const { fetchDestinations } = useTripStore();
 
   return useQuery({
     queryKey: tripKeys.list({ category }),
     queryFn: async () => {
-      // Use the queryHandler to abstract the mock/real decision
-      return await queryHandler({
-        mockFn: async () => {
-          await fetchDestinations(category);
-          return useTripStore.getState().destinations;
-        },
-        realFn: async () => {
-          await fetchDestinations(category);
-          return useTripStore.getState().destinations;
-        },
-        useMock,
-      });
+      await fetchDestinations(category);
+      return useTripStore.getState().destinations;
     },
-    staleTime: useMock ? Infinity : 5 * 60 * 1000, // 5 minutes for real data, infinite for mock
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+// Hook for fetching global destinations (from global_destination table)
+export function useGlobalDestinations(category?: string) {
+  return useQuery({
+    queryKey: tripKeys.globalDestinations(),
+    queryFn: async () => {
+      const query = category
+        ? { from: 'global_destination', select: '*', eq: { category } }
+        : { from: 'global_destination', select: '*' };
+
+      const { data, error } = await useTripStore.getState().supabaseQuery(query);
+
+      if (error) throw new Error(`Failed to fetch global destinations: ${error.message}`);
+      return data || [];
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 }
 
 // Hook for fetching a single itinerary
 export function useItinerary(id: string) {
-  const store = useTripStore();
-  const { fetchItinerary, useMock } = store;
+  const { fetchItinerary } = useTripStore();
 
   return useQuery({
     queryKey: tripKeys.detail(id),
     queryFn: async () => {
-      return await queryHandler({
-        mockFn: async () => fetchItinerary(id),
-        realFn: async () => fetchItinerary(id),
-        useMock,
-      });
+      return await fetchItinerary(id);
     },
     enabled: !!id,
   });
@@ -105,16 +92,12 @@ export function useItinerary(id: string) {
 
 // Hook for creating a new itinerary
 export function useCreateItinerary() {
-  const { createItinerary, useMock } = useTripStore();
+  const { createItinerary } = useTripStore();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (newItinerary: Omit<TripItinerary, 'id'>) => {
-      return queryHandler({
-        mockFn: async () => createItinerary(newItinerary),
-        realFn: async () => createItinerary(newItinerary),
-        useMock,
-      });
+      return createItinerary(newItinerary);
     },
     onSuccess: () => {
       // Invalidate all trip queries to ensure up-to-date data
@@ -127,16 +110,12 @@ export function useCreateItinerary() {
 
 // Hook for updating an existing itinerary
 export function useUpdateItinerary() {
-  const { updateItinerary, useMock } = useTripStore();
+  const { updateItinerary } = useTripStore();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (itinerary: TripItinerary) => {
-      return queryHandler({
-        mockFn: async () => updateItinerary(itinerary),
-        realFn: async () => updateItinerary(itinerary),
-        useMock,
-      });
+      return updateItinerary(itinerary);
     },
     onSuccess: (data) => {
       // Invalidate the specific itinerary
@@ -155,16 +134,12 @@ export function useUpdateItinerary() {
 
 // Hook for deleting an itinerary
 export function useDeleteItinerary() {
-  const { deleteItinerary, useMock } = useTripStore();
+  const { deleteItinerary } = useTripStore();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => {
-      return queryHandler({
-        mockFn: async () => deleteItinerary(id),
-        realFn: async () => deleteItinerary(id),
-        useMock,
-      });
+      return deleteItinerary(id);
     },
     onSuccess: () => {
       // Invalidate all trip queries after deletion
@@ -177,7 +152,7 @@ export function useDeleteItinerary() {
 
 // Hook for fetching user itineraries
 export function useUserItineraries() {
-  const { fetchUserItineraries, useMock } = useTripStore();
+  const { fetchUserItineraries } = useTripStore();
 
   return useQuery({
     queryKey: tripKeys.userItineraries(),
@@ -185,13 +160,13 @@ export function useUserItineraries() {
       await fetchUserItineraries();
       return useTripStore.getState().userItineraries;
     },
-    staleTime: useMock ? Infinity : 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
 // Hook for fetching shared itineraries
 export function useSharedItineraries() {
-  const { fetchSharedItineraries, useMock } = useTripStore();
+  const { fetchSharedItineraries } = useTripStore();
 
   return useQuery({
     queryKey: tripKeys.sharedItineraries(),
@@ -199,13 +174,13 @@ export function useSharedItineraries() {
       await fetchSharedItineraries();
       return useTripStore.getState().sharedItineraries;
     },
-    staleTime: useMock ? Infinity : 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
 // Hook for fetching user favorites
 export function useFavorites() {
-  const { fetchFavorites, useMock } = useTripStore();
+  const { fetchFavorites } = useTripStore();
 
   return useQuery({
     queryKey: tripKeys.favorites(),
@@ -213,7 +188,7 @@ export function useFavorites() {
       await fetchFavorites();
       return useTripStore.getState().favorites;
     },
-    staleTime: useMock ? Infinity : 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -230,6 +205,11 @@ export function useToggleFavorite() {
     onSuccess: (newFavorites) => {
       // Update the favorites query data
       queryClient.setQueryData(tripKeys.favorites(), newFavorites);
+
+      // Also invalidate user itineraries as favorite status may have changed
+      queryClient.invalidateQueries({
+        queryKey: tripKeys.userItineraries(),
+      });
     },
   });
 }
@@ -286,6 +266,11 @@ export function useCreateDay() {
       queryClient.invalidateQueries({
         queryKey: tripKeys.itineraryComponents.days(variables.itinerary_id),
       });
+
+      // Also invalidate the itinerary detail
+      queryClient.invalidateQueries({
+        queryKey: tripKeys.detail(variables.itinerary_id),
+      });
     },
   });
 }
@@ -303,6 +288,11 @@ export function useUpdateDay() {
       // Invalidate relevant queries
       queryClient.invalidateQueries({
         queryKey: tripKeys.itineraryComponents.days(updatedDay.itinerary_id),
+      });
+
+      // Also invalidate the itinerary detail
+      queryClient.invalidateQueries({
+        queryKey: tripKeys.detail(updatedDay.itinerary_id),
       });
     },
   });
@@ -322,6 +312,11 @@ export function useDeleteDay() {
       queryClient.invalidateQueries({
         queryKey: tripKeys.itineraryComponents.days(variables.itineraryId),
       });
+
+      // Also invalidate the itinerary detail
+      queryClient.invalidateQueries({
+        queryKey: tripKeys.detail(variables.itineraryId),
+      });
     },
   });
 }
@@ -335,11 +330,26 @@ export function useCreateActivity() {
     mutationFn: async (activity: Omit<TripActivity, 'id'>) => {
       return await createActivity(activity);
     },
-    onSuccess: (newActivity) => {
+    onSuccess: (newActivity, variables) => {
+      // Find the day's itinerary_id from the current state to invalidate correct queries
+      const currentItinerary = useTripStore.getState().currentItinerary;
+      const day = currentItinerary?.days.find((d) => d.id === variables.day_id);
+
       // Invalidate the activities query for this day
       queryClient.invalidateQueries({
         queryKey: tripKeys.itineraryComponents.activities(newActivity.day_id),
       });
+
+      // If we found the itinerary_id, also invalidate the days and itinerary
+      if (day?.itinerary_id) {
+        queryClient.invalidateQueries({
+          queryKey: tripKeys.itineraryComponents.days(day.itinerary_id),
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: tripKeys.detail(day.itinerary_id),
+        });
+      }
     },
   });
 }
@@ -353,11 +363,26 @@ export function useUpdateActivity() {
     mutationFn: async (activity: TripActivity) => {
       return await updateActivity(activity);
     },
-    onSuccess: (updatedActivity) => {
+    onSuccess: (updatedActivity, variables) => {
+      // Find the day's itinerary_id from the current state to invalidate correct queries
+      const currentItinerary = useTripStore.getState().currentItinerary;
+      const day = currentItinerary?.days.find((d) => d.id === variables.day_id);
+
       // Invalidate relevant queries
       queryClient.invalidateQueries({
         queryKey: tripKeys.itineraryComponents.activities(updatedActivity.day_id),
       });
+
+      // If we found the itinerary_id, also invalidate the days and itinerary
+      if (day?.itinerary_id) {
+        queryClient.invalidateQueries({
+          queryKey: tripKeys.itineraryComponents.days(day.itinerary_id),
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: tripKeys.detail(day.itinerary_id),
+        });
+      }
     },
   });
 }
@@ -372,10 +397,25 @@ export function useDeleteActivity() {
       return await deleteActivity(dayId, activityId);
     },
     onSuccess: (_, variables) => {
+      // Find the day's itinerary_id from the current state to invalidate correct queries
+      const currentItinerary = useTripStore.getState().currentItinerary;
+      const day = currentItinerary?.days.find((d) => d.id === variables.dayId);
+
       // Invalidate relevant queries
       queryClient.invalidateQueries({
         queryKey: tripKeys.itineraryComponents.activities(variables.dayId),
       });
+
+      // If we found the itinerary_id, also invalidate the days and itinerary
+      if (day?.itinerary_id) {
+        queryClient.invalidateQueries({
+          queryKey: tripKeys.itineraryComponents.days(day.itinerary_id),
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: tripKeys.detail(day.itinerary_id),
+        });
+      }
     },
   });
 }
@@ -402,6 +442,21 @@ export function useAddActivityComment() {
       queryClient.invalidateQueries({
         queryKey: tripKeys.itineraryComponents.activities(variables.dayId),
       });
+
+      queryClient.invalidateQueries({
+        queryKey: tripKeys.itineraryComponents.activityComments(variables.activityId),
+      });
+
+      // Find the day's itinerary_id from the current state to invalidate correct queries
+      const currentItinerary = useTripStore.getState().currentItinerary;
+      const day = currentItinerary?.days.find((d) => d.id === variables.dayId);
+
+      // If we found the itinerary_id, also invalidate the itinerary
+      if (day?.itinerary_id) {
+        queryClient.invalidateQueries({
+          queryKey: tripKeys.detail(day.itinerary_id),
+        });
+      }
     },
   });
 }
@@ -428,6 +483,21 @@ export function useAddActivityVote() {
       queryClient.invalidateQueries({
         queryKey: tripKeys.itineraryComponents.activities(variables.dayId),
       });
+
+      queryClient.invalidateQueries({
+        queryKey: tripKeys.itineraryComponents.activityVotes(variables.activityId),
+      });
+
+      // Find the day's itinerary_id from the current state to invalidate correct queries
+      const currentItinerary = useTripStore.getState().currentItinerary;
+      const day = currentItinerary?.days.find((d) => d.id === variables.dayId);
+
+      // If we found the itinerary_id, also invalidate the itinerary
+      if (day?.itinerary_id) {
+        queryClient.invalidateQueries({
+          queryKey: tripKeys.detail(day.itinerary_id),
+        });
+      }
     },
   });
 }
@@ -480,6 +550,10 @@ export function useUpdateWeather() {
       queryClient.invalidateQueries({
         queryKey: tripKeys.itineraryComponents.weather(variables.itineraryId),
       });
+
+      queryClient.invalidateQueries({
+        queryKey: tripKeys.detail(variables.itineraryId),
+      });
     },
   });
 }
@@ -503,6 +577,10 @@ export function useUpdateWeatherOverview() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: tripKeys.itineraryComponents.weatherOverview(variables.itineraryId),
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: tripKeys.detail(variables.itineraryId),
       });
     },
   });
@@ -542,6 +620,10 @@ export function useUpdateWarnings() {
       queryClient.invalidateQueries({
         queryKey: tripKeys.itineraryComponents.warnings(variables.itineraryId),
       });
+
+      queryClient.invalidateQueries({
+        queryKey: tripKeys.detail(variables.itineraryId),
+      });
     },
   });
 }
@@ -573,6 +655,10 @@ export function useUpdateTips() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: tripKeys.itineraryComponents.tips(variables.itineraryId),
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: tripKeys.detail(variables.itineraryId),
       });
     },
   });
@@ -612,7 +698,23 @@ export function useUpdateHighlights() {
       queryClient.invalidateQueries({
         queryKey: tripKeys.itineraryComponents.highlights(variables.itineraryId),
       });
+
+      queryClient.invalidateQueries({
+        queryKey: tripKeys.detail(variables.itineraryId),
+      });
     },
+  });
+}
+
+// Hook for fetching packing items
+export function usePackingItems(itineraryId: string) {
+  return useQuery({
+    queryKey: tripKeys.itineraryComponents.packingItems(itineraryId),
+    queryFn: async () => {
+      await useTripStore.getState().fetchItinerary(itineraryId);
+      return useTripStore.getState().currentItinerary?.packing_recommendation || [];
+    },
+    enabled: !!itineraryId,
   });
 }
 
@@ -653,6 +755,11 @@ export function useShareItinerary() {
       queryClient.invalidateQueries({
         queryKey: tripKeys.itineraryComponents.sharedUsers(variables.itineraryId),
       });
+
+      // Also invalidate the itinerary detail
+      queryClient.invalidateQueries({
+        queryKey: tripKeys.detail(variables.itineraryId),
+      });
     },
   });
 }
@@ -672,6 +779,11 @@ export function useRemoveSharedUser() {
       queryClient.invalidateQueries({
         queryKey: tripKeys.itineraryComponents.sharedUsers(variables.itineraryId),
       });
+
+      // Also invalidate the itinerary detail
+      queryClient.invalidateQueries({
+        queryKey: tripKeys.detail(variables.itineraryId),
+      });
     },
   });
 }
@@ -685,25 +797,38 @@ export function useActivityComments(activityId: string) {
     queryFn: async () => {
       // Find the activity in the current itinerary
       let comments: ActivityComment[] = [];
-      if (currentItinerary) {
-        for (const day of currentItinerary.days || []) {
-          const activity = day.activities.find((a) => a.id === activityId);
-          if (activity) {
-            comments = activity.ActivityComment || [];
-            break;
-          }
+
+      if (!currentItinerary) {
+        // If no itinerary is loaded, fetch comments directly from the activity_comments table
+        const { data, error } = await useTripStore.getState().supabaseQuery({
+          from: 'activity_comments',
+          select: '*',
+          eq: { activity_id: activityId },
+        });
+
+        if (error) throw new Error(`Failed to fetch comments: ${error.message}`);
+        return data || [];
+      }
+
+      // Otherwise use the data from the current itinerary
+      for (const day of currentItinerary.days || []) {
+        const activity = day.activities.find((a) => a.id === activityId);
+        if (activity) {
+          comments = activity.ActivityComment || [];
+          break;
         }
       }
+
       return comments;
     },
-    enabled: !!activityId && !!currentItinerary,
+    enabled: !!activityId,
   });
 }
 
 // Hook for deleting a comment from an activity
 export function useDeleteActivityComment() {
   const queryClient = useQueryClient();
-  const { currentItinerary, setCurrentItinerary } = useTripStore();
+  const { currentItinerary } = useTripStore();
 
   return useMutation({
     mutationFn: async ({
@@ -715,37 +840,46 @@ export function useDeleteActivityComment() {
       commentId: string;
       dayId: string;
     }) => {
-      if (!currentItinerary) throw new Error('No itinerary loaded');
-
-      // Find the day and activity, then remove the comment
-      const updatedDays =
-        currentItinerary.days?.map((d) => {
-          if (d.id === dayId) {
-            return {
-              ...d,
-              activities:
-                d.activities?.map((a) => {
-                  if (a.id === activityId) {
-                    return {
-                      ...a,
-                      ActivityComment: (a.ActivityComment || []).filter((c) => c.id !== commentId),
-                    };
-                  }
-                  return a;
-                }) || [],
-            };
-          }
-          return d;
-        }) || [];
-
-      // Update the itinerary
-      setCurrentItinerary({
-        ...currentItinerary,
-        days: updatedDays,
+      // Delete the comment from activity_comments table
+      const { error } = await useTripStore.getState().supabaseQuery({
+        from: 'activity_comments',
+        delete: true,
+        eq: { id: commentId },
       });
 
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      if (error) throw new Error(`Failed to delete comment: ${error.message}`);
+
+      // Also update the local state
+      if (currentItinerary) {
+        // Find the day and activity, then remove the comment
+        const updatedDays =
+          currentItinerary.days?.map((d) => {
+            if (d.id === dayId) {
+              return {
+                ...d,
+                activities:
+                  d.activities?.map((a) => {
+                    if (a.id === activityId) {
+                      return {
+                        ...a,
+                        ActivityComment: (a.ActivityComment || []).filter(
+                          (c) => c.id !== commentId
+                        ),
+                      };
+                    }
+                    return a;
+                  }) || [],
+              };
+            }
+            return d;
+          }) || [];
+
+        // Update the itinerary in the store
+        useTripStore.getState().setCurrentItinerary({
+          ...currentItinerary,
+          days: updatedDays,
+        });
+      }
 
       return true;
     },
@@ -754,9 +888,21 @@ export function useDeleteActivityComment() {
       queryClient.invalidateQueries({
         queryKey: tripKeys.itineraryComponents.activityComments(variables.activityId),
       });
+
       queryClient.invalidateQueries({
         queryKey: tripKeys.itineraryComponents.activities(variables.dayId),
       });
+
+      // Find the day's itinerary_id from the current state to invalidate correct queries
+      const currentItinerary = useTripStore.getState().currentItinerary;
+      const day = currentItinerary?.days.find((d) => d.id === variables.dayId);
+
+      // If we found the itinerary_id, also invalidate the itinerary
+      if (day?.itinerary_id) {
+        queryClient.invalidateQueries({
+          queryKey: tripKeys.detail(day.itinerary_id),
+        });
+      }
     },
   });
 }
@@ -770,25 +916,38 @@ export function useActivityVotes(activityId: string) {
     queryFn: async () => {
       // Find the activity in the current itinerary
       let votes: ActivityVote[] = [];
-      if (currentItinerary) {
-        for (const day of currentItinerary.days || []) {
-          const activity = day.activities.find((a) => a.id === activityId);
-          if (activity) {
-            votes = activity.votes || [];
-            break;
-          }
+
+      if (!currentItinerary) {
+        // If no itinerary is loaded, fetch votes directly from the activity_votes table
+        const { data, error } = await useTripStore.getState().supabaseQuery({
+          from: 'activity_votes',
+          select: '*',
+          eq: { activity_id: activityId },
+        });
+
+        if (error) throw new Error(`Failed to fetch votes: ${error.message}`);
+        return data || [];
+      }
+
+      // Otherwise use the data from the current itinerary
+      for (const day of currentItinerary.days || []) {
+        const activity = day.activities.find((a) => a.id === activityId);
+        if (activity) {
+          votes = activity.votes || [];
+          break;
         }
       }
+
       return votes;
     },
-    enabled: !!activityId && !!currentItinerary,
+    enabled: !!activityId,
   });
 }
 
 // Hook for deleting a vote from an activity
 export function useDeleteActivityVote() {
   const queryClient = useQueryClient();
-  const { currentItinerary, setCurrentItinerary } = useTripStore();
+  const { currentItinerary } = useTripStore();
 
   return useMutation({
     mutationFn: async ({
@@ -800,37 +959,44 @@ export function useDeleteActivityVote() {
       voteId: string;
       dayId: string;
     }) => {
-      if (!currentItinerary) throw new Error('No itinerary loaded');
-
-      // Find the day and activity, then remove the vote
-      const updatedDays =
-        currentItinerary.days?.map((d) => {
-          if (d.id === dayId) {
-            return {
-              ...d,
-              activities:
-                d.activities?.map((a) => {
-                  if (a.id === activityId) {
-                    return {
-                      ...a,
-                      votes: (a.votes || []).filter((v) => v.id !== voteId),
-                    };
-                  }
-                  return a;
-                }) || [],
-            };
-          }
-          return d;
-        }) || [];
-
-      // Update the itinerary
-      setCurrentItinerary({
-        ...currentItinerary,
-        days: updatedDays,
+      // Delete the vote from activity_votes table
+      const { error } = await useTripStore.getState().supabaseQuery({
+        from: 'activity_votes',
+        delete: true,
+        eq: { id: voteId },
       });
 
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      if (error) throw new Error(`Failed to delete vote: ${error.message}`);
+
+      // Also update the local state
+      if (currentItinerary) {
+        // Find the day and activity, then remove the vote
+        const updatedDays =
+          currentItinerary.days?.map((d) => {
+            if (d.id === dayId) {
+              return {
+                ...d,
+                activities:
+                  d.activities?.map((a) => {
+                    if (a.id === activityId) {
+                      return {
+                        ...a,
+                        votes: (a.votes || []).filter((v) => v.id !== voteId),
+                      };
+                    }
+                    return a;
+                  }) || [],
+              };
+            }
+            return d;
+          }) || [];
+
+        // Update the itinerary in the store
+        useTripStore.getState().setCurrentItinerary({
+          ...currentItinerary,
+          days: updatedDays,
+        });
+      }
 
       return true;
     },
@@ -839,9 +1005,21 @@ export function useDeleteActivityVote() {
       queryClient.invalidateQueries({
         queryKey: tripKeys.itineraryComponents.activityVotes(variables.activityId),
       });
+
       queryClient.invalidateQueries({
         queryKey: tripKeys.itineraryComponents.activities(variables.dayId),
       });
+
+      // Find the day's itinerary_id from the current state to invalidate correct queries
+      const currentItinerary = useTripStore.getState().currentItinerary;
+      const day = currentItinerary?.days.find((d) => d.id === variables.dayId);
+
+      // If we found the itinerary_id, also invalidate the itinerary
+      if (day?.itinerary_id) {
+        queryClient.invalidateQueries({
+          queryKey: tripKeys.detail(day.itinerary_id),
+        });
+      }
     },
   });
 }

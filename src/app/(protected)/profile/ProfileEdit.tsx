@@ -1,44 +1,111 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  Image,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 
 import { AppText, Button, Container } from '@/src/components/ui';
+import { useUpdateProfile, useUserProfile } from '@/src/hooks/profileQueries';
+import { ProfileFormData } from '@/src/types/profiles';
 
 export default function ProfileEdit() {
-  const [profile, setProfile] = useState({
-    fullName: 'Moa Almusfer',
-    username: 'moaalmusfer',
-    pronouns: '',
+  // Fetch profile data using the useUserProfile hook
+  const { data: userProfile, isLoading: isProfileLoading } = useUserProfile();
+
+  // Update profile mutation
+  const { mutate: updateProfile, isPending: isUpdating } = useUpdateProfile();
+
+  // Form state for editing
+  const [profile, setProfile] = useState<ProfileFormData>({
+    username: '',
+    fullName: '',
     bio: '',
-    gender: '',
-    avatarUrl: 'https://randomuser.me/api/portraits/men/32.jpg',
+    avatarUrl: '',
   });
+
+  // Update local state when profile data is loaded
+  useEffect(() => {
+    if (userProfile) {
+      setProfile({
+        username: userProfile.username || '',
+        fullName: userProfile.full_name || '',
+        bio: userProfile.bio || '',
+        avatarUrl: userProfile.avatar_url || 'https://randomuser.me/api/portraits/men/32.jpg',
+        travelStyle: userProfile.travel_style || '',
+      });
+    }
+  }, [userProfile]);
 
   // Handle text input changes
   const handleChange = (field: string, value: string) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Placeholder function for updating profile
+  // Function for updating profile with real data
   const handleSaveProfile = () => {
-    console.log('Profile updated:', profile);
-    router.back();
+    // Basic validation
+    if (!profile.username.trim()) {
+      Alert.alert('Error', 'Username is required');
+      return;
+    }
+
+    // Convert client-side form data to match database schema
+    updateProfile(
+      {
+        username: profile.username,
+        full_name: profile.fullName,
+        bio: profile.bio,
+        avatar_url: profile.avatarUrl,
+        travel_style: profile.travelStyle,
+      },
+      {
+        onSuccess: () => {
+          Alert.alert('Success', 'Profile updated successfully!');
+          router.back();
+        },
+        onError: (error) => {
+          Alert.alert('Error', `Failed to update profile: ${error}`);
+        },
+      }
+    );
   };
 
-  // Placeholder function for image upload
+  // Function for image upload
   const handleImageUpload = () => {
-    console.log('Image upload pressed');
-    // Would typically show image picker here and then update the profile state
+    Alert.alert('Image Upload', 'This would open an image picker in a real implementation');
+    // This is just a placeholder for actual image upload functionality
     setProfile((prev) => ({
       ...prev,
-      avatarUrl: 'https://randomuser.me/api/portraits/men/33.jpg', // Example of changing avatar
+      avatarUrl:
+        prev.avatarUrl === 'https://randomuser.me/api/portraits/men/32.jpg'
+          ? 'https://randomuser.me/api/portraits/men/33.jpg'
+          : 'https://randomuser.me/api/portraits/men/32.jpg',
     }));
   };
+
+  // Display loading state while fetching profile
+  if (isProfileLoading) {
+    return (
+      <Container>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#5BBFB5" />
+          <AppText className="mt-4">Loading profile...</AppText>
+        </View>
+      </Container>
+    );
+  }
 
   return (
     <Container>
       <ScrollView className="flex-1">
+        {/* Header */}
         <View className="mb-4 flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="p-2">
             <MaterialCommunityIcons name="arrow-left" size={24} color="#000" />
@@ -60,7 +127,7 @@ export default function ProfileEdit() {
           </View>
           <TouchableOpacity onPress={handleImageUpload} className="mt-2">
             <AppText color="primary" size="sm" weight="medium">
-              Edit picture or avatar
+              Change profile picture
             </AppText>
           </TouchableOpacity>
         </View>
@@ -93,111 +160,71 @@ export default function ProfileEdit() {
             />
           </View>
 
-          {/* Pronouns Field */}
-          <View>
-            <AppText weight="medium" className="mb-2">
-              Pronouns
-            </AppText>
-            <TouchableOpacity className="flex-row items-center justify-between border-b border-gray-300 py-2">
-              <TextInput
-                value={profile.pronouns}
-                onChangeText={(text) => handleChange('pronouns', text)}
-                className="flex-1 text-base"
-                placeholder="Add pronouns"
-              />
-              <MaterialCommunityIcons name="chevron-right" size={24} color="#666" />
-            </TouchableOpacity>
-          </View>
-
           {/* Bio Field */}
           <View>
             <AppText weight="medium" className="mb-2">
               Bio
             </AppText>
-            <TouchableOpacity className="flex-row items-center justify-between border-b border-gray-300 py-2">
-              <TextInput
-                value={profile.bio}
-                onChangeText={(text) => handleChange('bio', text)}
-                className="flex-1 text-base"
-                placeholder="Add bio"
-                multiline
-              />
-              <MaterialCommunityIcons name="chevron-right" size={24} color="#666" />
-            </TouchableOpacity>
+            <TextInput
+              value={profile.bio}
+              onChangeText={(text) => handleChange('bio', text)}
+              className="border-b border-gray-300 py-2 text-base"
+              placeholder="Tell the world about yourself"
+              multiline
+              numberOfLines={3}
+            />
           </View>
 
-          {/* Links Section */}
+          {/* Travel Style Field */}
           <View>
             <AppText weight="medium" className="mb-2">
-              Links
+              Travel Style
             </AppText>
-            <TouchableOpacity className="flex-row items-center justify-between border-b border-gray-300 py-2">
-              <AppText className="text-gray-500">Add links</AppText>
-              <MaterialCommunityIcons name="chevron-right" size={24} color="#666" />
-            </TouchableOpacity>
+            <TextInput
+              value={profile.travelStyle}
+              onChangeText={(text) => handleChange('travelStyle', text)}
+              className="border-b border-gray-300 py-2 text-base"
+              placeholder="Describe your travel style"
+            />
           </View>
 
-          {/* Banners Section */}
-          <View>
-            <AppText weight="medium" className="mb-2">
-              Banners
-            </AppText>
-            <TouchableOpacity className="flex-row items-center justify-between border-b border-gray-300 py-2">
-              <AppText className="text-gray-500">Add banners</AppText>
-              <MaterialCommunityIcons name="chevron-right" size={24} color="#666" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Music Section */}
-          <View>
-            <AppText weight="medium" className="mb-2">
-              Music
-            </AppText>
-            <TouchableOpacity className="flex-row items-center justify-between border-b border-gray-300 py-2">
-              <AppText className="text-gray-500">Add music to your profile</AppText>
-              <MaterialCommunityIcons name="chevron-right" size={24} color="#666" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Gender Section */}
-          <View>
-            <AppText weight="medium" className="mb-2">
-              Gender
-            </AppText>
-            <TouchableOpacity className="flex-row items-center justify-between border-b border-gray-300 py-2">
-              <AppText className="text-gray-500">Gender</AppText>
-              <MaterialCommunityIcons name="chevron-right" size={24} color="#666" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Additional Options */}
-          <View className="space-y-4 pt-4">
-            <TouchableOpacity>
-              <AppText color="primary" className="py-2">
-                Switch to professional account
+          {/* Account Status Section */}
+          {userProfile?.ispremium && (
+            <View className="mt-4 rounded-lg bg-blue-50 p-4">
+              <View className="flex-row items-center">
+                <MaterialCommunityIcons name="crown" size={24} color="#FFD700" />
+                <AppText weight="semibold" className="ml-2">
+                  Premium Account
+                </AppText>
+              </View>
+              <AppText size="sm" className="mt-1 text-gray-600">
+                You have access to all premium features
               </AppText>
-            </TouchableOpacity>
+            </View>
+          )}
 
-            <TouchableOpacity>
-              <AppText color="primary" className="py-2">
-                Personal information settings
+          {userProfile?.issubscribed && (
+            <View className="mt-2 rounded-lg bg-green-50 p-4">
+              <View className="flex-row items-center">
+                <MaterialCommunityIcons name="check-circle" size={24} color="#5BBFB5" />
+                <AppText weight="semibold" className="ml-2">
+                  Subscribed
+                </AppText>
+              </View>
+              <AppText size="sm" className="mt-1 text-gray-600">
+                You're subscribed to our newsletter
               </AppText>
-            </TouchableOpacity>
-
-            <TouchableOpacity>
-              <AppText color="primary" className="py-2">
-                Show your profile is verified
-              </AppText>
-            </TouchableOpacity>
-          </View>
+            </View>
+          )}
 
           {/* Save Button */}
           <View className="py-8">
             <Button
-              title="Save Changes"
+              title={isUpdating ? 'Saving...' : 'Save Changes'}
               onPress={handleSaveProfile}
               color="primary"
               className="w-full"
+              disabled={isUpdating}
             />
           </View>
         </View>
