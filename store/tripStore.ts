@@ -821,7 +821,10 @@ export const useTripStore = create<TripStore>((set, get) => ({
         throw new Error(`Failed to fetch favorites: ${error.message}`);
       }
 
-      set({ favorites: data ? data.map((item) => item.destination_id) : [] });
+      // Extract the destination ids from the user_favorites records
+      const favoriteIds = data ? data.map((item) => item.destination_id) : [];
+
+      set({ favorites: favoriteIds });
     } catch (error) {
       console.error('Error fetching favorites:', error);
       // We don't set an error state here since this is not a critical failure
@@ -860,39 +863,15 @@ export const useTripStore = create<TripStore>((set, get) => ({
 
         if (error) throw error;
       } else {
-        // Add to favorites - determine if this is a trip itinerary or a global destination
-        // Check if it's a trip itinerary
-        const { data: itineraryData, error: itineraryError } = await supabase
-          .from('trip_itineraries')
-          .select('id')
-          .eq('id', destinationId)
-          .maybeSingle();
+        // Add to favorites
+        const { error } = await supabase.from('user_favorites').insert({
+          user_id: session.user.id,
+          destination_id: destinationId,
+          created_at: new Date().toISOString(),
+        });
 
-        if (itineraryError) throw itineraryError;
-
-        if (itineraryData) {
-          // It's a trip itinerary, so add to favorites with trip_itinerary_id
-          const { error } = await supabase.from('user_favorites').insert({
-            user_id: session.user.id,
-            trip_itinerary_id: destinationId,
-            created_at: new Date().toISOString(),
-          });
-
-          if (error) throw error;
-        } else {
-          // Assume it's a global destination
-          const { error } = await supabase.from('user_favorites').insert({
-            user_id: session.user.id,
-            destination_id: destinationId,
-            created_at: new Date().toISOString(),
-          });
-
-          if (error) throw error;
-        }
+        if (error) throw error;
       }
-
-      // Also update the is_favorite field in the itinerary
-      await get().toggleFavoriteProperty(destinationId);
 
       // Refresh the list if we're viewing favorites to ensure UI consistency
       if (get().selectedCategory === 'favorites') {

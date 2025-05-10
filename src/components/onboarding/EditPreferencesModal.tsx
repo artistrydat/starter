@@ -9,6 +9,8 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  GestureResponderEvent,
+  LayoutChangeEvent,
 } from 'react-native';
 
 import { AppText, Button } from '@/src/components/ui';
@@ -54,6 +56,7 @@ export function EditPreferencesModal({
   const [selectedValues, setSelectedValues] = useState<string[]>(
     Array.isArray(currentValues) ? currentValues : []
   );
+  const [sliderWidth, setSliderWidth] = useState(0);
 
   const getBudgetCategory = (amount: number): string => {
     if (amount <= 100) return 'Budget';
@@ -67,6 +70,23 @@ export function EditPreferencesModal({
       amount,
       style: [getBudgetCategory(amount)],
     });
+  };
+
+  const handleSliderLayout = (event: LayoutChangeEvent) => {
+    const { width } = event.nativeEvent.layout;
+    setSliderWidth(width);
+  };
+
+  const handleSliderPress = (event: GestureResponderEvent) => {
+    const { locationX } = event.nativeEvent;
+    if (sliderWidth > 0) {
+      const percentage = Math.min(Math.max((locationX / sliderWidth) * 100, 0), 100);
+      const amount = Math.round(percentage);
+      setBudgetValues({
+        amount,
+        style: [getBudgetCategory(amount)],
+      });
+    }
   };
 
   const toggleValue = (value: string) => {
@@ -120,6 +140,27 @@ export function EditPreferencesModal({
                     placeholder="Enter daily budget"
                     placeholderTextColor="#C5E7E3"
                   />
+                  <View
+                    onLayout={handleSliderLayout}
+                    className="relative mt-2 h-10 rounded-lg bg-quaternary/20">
+                    <TouchableOpacity
+                      activeOpacity={1}
+                      onPress={handleSliderPress}
+                      onPressIn={handleSliderPress}
+                      onPressOut={handleSliderPress}
+                      className="absolute left-0 right-0 top-0 h-10">
+                      <View className="absolute left-0 right-0 top-4 h-2 rounded-full bg-quaternary/30">
+                        <View
+                          className="absolute bottom-0 left-0 top-0 rounded-full bg-primary"
+                          style={{ width: `${budgetValues.amount}%` }}
+                        />
+                      </View>
+                    </TouchableOpacity>
+                    <View
+                      className="absolute -top-1 h-6 w-6 rounded-full border-2 border-white bg-primary shadow-sm"
+                      style={{ left: `${budgetValues.amount}%`, transform: [{ translateX: -12 }] }}
+                    />
+                  </View>
                   <AppText size="sm" color="secondary" className="mt-2">
                     Category: {budgetValues.style[0]}
                   </AppText>

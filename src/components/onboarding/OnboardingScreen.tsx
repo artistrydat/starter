@@ -113,15 +113,26 @@ export const OnboardingScreen = ({
         {step.type === 'slider' ? (
           <>
             <View ref={sliderRef} onLayout={handleLayout} className="relative h-8 justify-center">
-              <View className="absolute left-0 right-0 top-3 h-2 rounded-full bg-quaternary/20">
-                <View
-                  className="absolute bottom-0 left-0 top-0 rounded-full bg-quaternary/60"
-                  style={{ width: `${budgetRange}%` }}
-                />
+              <TouchableOpacity
+                activeOpacity={1}
+                onPress={handleSliderPress}
+                onPressIn={handleSliderPress}
+                onPressOut={handleSliderPress}
+                className="absolute left-0 right-0 top-0 h-8">
+                <View className="absolute left-0 right-0 top-3 h-2 rounded-full bg-quaternary/20">
+                  <View
+                    className="absolute bottom-0 left-0 top-0 rounded-full bg-quaternary/60"
+                    style={{ width: `${budgetRange}%` }}
+                  />
+                </View>
+              </TouchableOpacity>
+              <View
+                className="absolute -top-3 h-8 w-8 rounded-full border-2 border-white bg-primary shadow-sm"
+                style={{ left: `${budgetRange}%`, transform: [{ translateX: -16 }] }}>
                 <TouchableOpacity
-                  onPress={handleSliderPress}
-                  className="absolute -top-3 h-8 w-8 rounded-full border-2 border-white bg-primary shadow-sm"
-                  style={{ left: `${budgetRange}%`, transform: [{ translateX: -16 }] }}
+                  onPressIn={() => {}}
+                  onPressOut={() => {}}
+                  className="h-full w-full rounded-full"
                 />
               </View>
             </View>
